@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="./logo.png" />
+    <link rel="icon" type="image/png" href="/navigo-campus-navigation/assets/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NaviGO — Meridian Campus Guide &amp; Interactive Navigation</title>
     <meta name="description" content="NaviGO: Interactive campus navigation, class schedules, room availability, and event bulletin for Meridian Campus." />
@@ -33,9 +33,11 @@
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Archivo+Black&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap"
       rel="stylesheet"
     />
+    <script type="module" crossorigin src="/navigo-campus-navigation/assets/index.js"></script>
+    <link rel="modulepreload" crossorigin href="/navigo-campus-navigation/assets/vendor.js">
+    <link rel="stylesheet" crossorigin href="/navigo-campus-navigation/assets/index.css">
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./src/main.jsx"></script>
   </body>
 </html>

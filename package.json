@@ -4,8 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/prep-build.cjs",
     "dev": "vite",
+    "prebuild": "node scripts/prep-build.cjs",
     "build": "vite build",
+    "postbuild": "node scripts/sync-build.cjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "backend": "run_backend.bat"
