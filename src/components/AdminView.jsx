@@ -1,7 +1,7 @@
 import { useState, useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import { BUILDINGS, FACULTY, ROOMS, CLASSES, TIMETABLE, getRoomById, getClassById } from '../data';
-import { Pencil, Plus, X } from 'lucide-react';
+import { Pencil, X, AlertTriangle } from 'lucide-react';
 import { GlassTabs } from './ui/GlassTabs';
 
 const CATEGORIES = ['WORKSHOP', 'LECTURE', 'TECH_FEST', 'HACKATHON', 'CULTURAL_FEST', 'SPORTS', 'COMPETITION'];
@@ -13,6 +13,7 @@ export default function AdminView() {
     announcements, addAnnouncement, removeAnnouncement,
     roomOverrides, applyRoomOverride,
     timetableOverrides, applyTimetableOverride,
+    locationStatus = {}, toggleLocationStatus,
   } = useContext(AppContext);
 
   const [activeTab, setActiveTab] = useState('events');
@@ -40,9 +41,42 @@ export default function AdminView() {
   const [annText, setAnnText] = useState('');
   const [annSeverity, setAnnSeverity] = useState('ALERT');
 
+  // Location management & deactivation warning state
+  const [deactivationWarning, setDeactivationWarning] = useState(null);
+
   const flash = (msg) => {
     setSuccessMsg(msg);
     setTimeout(() => setSuccessMsg(''), 3500);
+  };
+
+  // --- Location Management ---
+  const handleToggleLocation = (building) => {
+    const isCurrentlyClosed = locationStatus[building.id] === 'closed';
+    if (isCurrentlyClosed) {
+      toggleLocationStatus(building.id);
+      flash(`${building.label} reactivated — status updated to Operational.`);
+      return;
+    }
+
+    const referenced = events.filter((e) => e.venue === building.id);
+    if (referenced.length > 0) {
+      setDeactivationWarning({ building, referencedEvents: referenced });
+    } else {
+      toggleLocationStatus(building.id);
+      flash(`${building.label} marked as Closed — public directory updated.`);
+    }
+  };
+
+  const confirmDeactivation = () => {
+    if (!deactivationWarning) return;
+    const { building, referencedEvents } = deactivationWarning;
+    toggleLocationStatus(building.id);
+    flash(`${building.label} deactivated. ${referencedEvents.length} active event(s) flagged as Closed Venue.`);
+    setDeactivationWarning(null);
+  };
+
+  const cancelDeactivation = () => {
+    setDeactivationWarning(null);
   };
 
   // --- Events ---
@@ -111,6 +145,7 @@ export default function AdminView() {
 
   const TABS = [
     { id: 'events', label: 'Events' },
+    { id: 'locations', label: 'Locations' },
     { id: 'rooms', label: 'Room Changes' },
     { id: 'timetable', label: 'Timetable' },
     { id: 'announce', label: 'Announcements' },
@@ -205,7 +240,7 @@ export default function AdminView() {
 
             <button
               onClick={() => setShowAddEvent(!showAddEvent)}
-              className="glass-btn rounded-full px-5 py-2.5 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 font-bold text-xs tracking-wide"
+              className="glass-btn rounded-lg px-5 py-2.5 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 font-bold text-xs tracking-wide"
               style={{
                 background: showAddEvent
                   ? 'rgba(239, 68, 68, 0.15)'
@@ -299,6 +334,86 @@ export default function AdminView() {
         </div>
       )}
 
+      {/* ── Locations Management Tab ── */}
+      {activeTab === 'locations' && (
+        <div className="glass-card rounded-2xl overflow-hidden border border-[var(--glass-border)] mb-6 shadow-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-5 border-b border-[var(--glass-border)] w-full glass-2">
+            <div>
+              <h2 className="font-display text-lg font-bold uppercase tracking-tight text-[var(--text-primary)]">
+                Location & Venue Management
+              </h2>
+              <p className="font-mono text-[10px] text-[var(--text-muted)] mt-1">
+                Deactivate or reopen campus facilities. Deactivation automatically validates and warns about affected scheduled events.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[10px] px-2.5 py-1 rounded-md border border-[var(--glass-border)] text-[var(--text-muted)]">
+                {Object.values(locationStatus).filter(s => s === 'closed').length} Closed
+              </span>
+              <span className="font-mono text-[10px] px-2.5 py-1 rounded-md border border-emerald-500/30 text-emerald-500 bg-emerald-500/10">
+                {BUILDINGS.filter(b => b.type !== 'gate').length - Object.values(locationStatus).filter(s => s === 'closed').length} Operational
+              </span>
+            </div>
+          </div>
+
+          <div className="divide-y divide-[var(--glass-border)]">
+            {BUILDINGS.filter(b => b.type !== 'gate').map((b, idx) => {
+              const isClosed = locationStatus[b.id] === 'closed';
+              const linkedEvents = events.filter((e) => e.venue === b.id);
+
+              return (
+                <div
+                  key={b.id}
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-4 transition-colors ${
+                    idx % 2 === 0 ? 'bg-white/50 dark:bg-[#141414]/50' : 'bg-[#FAFAFA]/50 dark:bg-[#111111]/50'
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="font-mono text-[9px] px-2 py-0.5 rounded-md border border-[var(--glass-border)] text-[var(--text-muted)] uppercase">
+                        {b.type} · {b.code}
+                      </span>
+                      {isClosed ? (
+                        <span className="font-mono text-[9px] px-2 py-0.5 rounded-md font-bold bg-red-500/20 text-red-500 border border-red-500/40">
+                          CLOSED / MAINTENANCE
+                        </span>
+                      ) : (
+                        <span className="font-mono text-[9px] px-2 py-0.5 rounded-md font-bold bg-emerald-500/20 text-emerald-500 border border-emerald-500/40">
+                          OPERATIONAL
+                        </span>
+                      )}
+                      {linkedEvents.length > 0 && (
+                        <span className="font-mono text-[9px] px-2 py-0.5 rounded-md bg-[var(--gold)]/20 text-[var(--gold)] border border-[var(--gold)]/30 font-bold">
+                          {linkedEvents.length} Active Event{linkedEvents.length > 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="font-bold text-sm text-[var(--text-primary)]">{b.label}</h4>
+                    <p className="font-mono text-[10px] text-[var(--text-muted)] mt-0.5">
+                      {b.department} · {b.facilities.slice(0, 3).join(', ')}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => handleToggleLocation(b)}
+                      className={`font-mono text-xs px-4 py-2 rounded-lg font-bold transition-all ${
+                        isClosed
+                          ? 'glass-btn glass-btn-primary'
+                          : 'border border-red-500/40 text-red-500 hover:bg-red-500/15'
+                      }`}
+                      aria-label={`${isClosed ? 'Reopen' : 'Deactivate'} ${b.label}`}
+                    >
+                      {isClosed ? 'Reopen Location' : 'Deactivate (Mark Closed)'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── Room Changes Tab ── */}
       {activeTab === 'rooms' && (
         <div className="glass-card rounded-2xl overflow-hidden border border-[var(--glass-border)] mb-6 shadow-lg">
@@ -341,14 +456,14 @@ export default function AdminView() {
                   , effective immediately
                 </p>
                 <div className="flex gap-3">
-                  <button onClick={() => setRoomChangeConfirm(true)} className="glass-btn glass-btn-primary rounded-full text-xs py-2 px-5 font-bold">CONFIRM</button>
-                  <button onClick={() => { setRoomChangeClass(''); setRoomChangeNewRoom(''); }} className="glass-btn glass-btn-ghost rounded-full text-xs py-2 px-4">CANCEL</button>
+                  <button onClick={() => setRoomChangeConfirm(true)} className="glass-btn glass-btn-primary rounded-lg text-xs py-2 px-5 font-bold">CONFIRM</button>
+                  <button onClick={() => { setRoomChangeClass(''); setRoomChangeNewRoom(''); }} className="glass-btn glass-btn-ghost rounded-lg text-xs py-2 px-4">CANCEL</button>
                 </div>
               </div>
             )}
 
             {roomChangeConfirm && (
-              <button onClick={handleRoomChange} className="glass-btn glass-btn-primary rounded-full text-xs py-2.5 px-6 font-bold shadow-md">
+              <button onClick={handleRoomChange} className="glass-btn glass-btn-primary rounded-lg text-xs py-2.5 px-6 font-bold shadow-md">
                 Apply Room Change
               </button>
             )}
@@ -357,7 +472,7 @@ export default function AdminView() {
             {Object.keys(roomOverrides).length > 0 && (
               <div className="mt-6">
                 <p className="font-mono text-[9px] text-gray-500 uppercase tracking-widest mb-2 font-semibold">Active Room Overrides</p>
-                <div className="rounded-2xl border border-[var(--glass-border)] overflow-hidden divide-y divide-[var(--glass-border)] glass-1">
+                <div className="rounded-xl border border-[var(--glass-border)] overflow-hidden divide-y divide-[var(--glass-border)] glass-1">
                   {Object.entries(roomOverrides).map(([classId, roomId]) => {
                     const cls = getClassById(classId);
                     const room = getRoomById(roomId);
@@ -367,7 +482,7 @@ export default function AdminView() {
                           <span className="font-bold text-sm text-[var(--text-primary)]">{cls?.shortName}</span>
                           <span className="font-mono text-xs text-gray-400 ml-2">→ {room?.number}</span>
                         </div>
-                        <span className="font-mono text-[9px] px-2 py-0.5 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] font-bold">ACTIVE</span>
+                        <span className="font-mono text-[9px] px-2 py-0.5 rounded-md bg-[var(--gold)]/20 text-[var(--gold)] font-bold">ACTIVE</span>
                       </div>
                     );
                   })}
@@ -440,14 +555,14 @@ export default function AdminView() {
                   , effective immediately
                 </p>
                 <div className="flex gap-3">
-                  <button onClick={() => setTtConfirm(true)} className="glass-btn glass-btn-primary rounded-full text-xs py-2 px-5 font-bold">CONFIRM</button>
-                  <button onClick={() => { setTtSlotId(''); setTtNewStart(''); setTtNewEnd(''); setTtNewRoom(''); }} className="glass-btn glass-btn-ghost rounded-full text-xs py-2 px-4">CANCEL</button>
+                  <button onClick={() => setTtConfirm(true)} className="glass-btn glass-btn-primary rounded-lg text-xs py-2 px-5 font-bold">CONFIRM</button>
+                  <button onClick={() => { setTtSlotId(''); setTtNewStart(''); setTtNewEnd(''); setTtNewRoom(''); }} className="glass-btn glass-btn-ghost rounded-lg text-xs py-2 px-4">CANCEL</button>
                 </div>
               </div>
             )}
 
             {ttConfirm && (
-              <button onClick={handleTimetableOverride} className="glass-btn glass-btn-primary rounded-full text-xs py-2.5 px-6 font-bold shadow-md">
+              <button onClick={handleTimetableOverride} className="glass-btn glass-btn-primary rounded-lg text-xs py-2.5 px-6 font-bold shadow-md">
                 Apply Reschedule
               </button>
             )}
@@ -455,7 +570,7 @@ export default function AdminView() {
             {Object.keys(timetableOverrides).length > 0 && (
               <div className="mt-6">
                 <p className="font-mono text-[9px] text-gray-500 uppercase tracking-widest mb-2 font-semibold">Active Timetable Overrides</p>
-                <div className="rounded-2xl border border-[var(--glass-border)] overflow-hidden divide-y divide-[var(--glass-border)] glass-1">
+                <div className="rounded-xl border border-[var(--glass-border)] overflow-hidden divide-y divide-[var(--glass-border)] glass-1">
                   {Object.entries(timetableOverrides).map(([slotId, changes]) => {
                     const slot = TIMETABLE.find((t) => t.id === slotId);
                     return (
@@ -467,7 +582,7 @@ export default function AdminView() {
                             {changes.roomId ? ` → ${getRoomById(changes.roomId)?.number}` : ''}
                           </span>
                         </div>
-                        <span className="font-mono text-[9px] px-2 py-0.5 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] font-bold">OVERRIDDEN</span>
+                        <span className="font-mono text-[9px] px-2 py-0.5 rounded-md bg-[var(--gold)]/20 text-[var(--gold)] font-bold">OVERRIDDEN</span>
                       </div>
                     );
                   })}
@@ -505,23 +620,23 @@ export default function AdminView() {
                 </select>
               </div>
             </div>
-            <button onClick={handleAddAnnouncement} disabled={!annText.trim()} className="glass-btn glass-btn-primary rounded-full text-xs py-2.5 px-6 font-bold shadow-md disabled:opacity-40">
+            <button onClick={handleAddAnnouncement} disabled={!annText.trim()} className="glass-btn glass-btn-primary rounded-lg text-xs py-2.5 px-6 font-bold shadow-md disabled:opacity-40">
               Broadcast Now
             </button>
 
             {announcements.length > 0 && (
               <div className="mt-6">
                 <p className="font-mono text-[9px] text-gray-500 uppercase tracking-widest mb-2 font-semibold">Live Broadcasts ({announcements.length})</p>
-                <div className="rounded-2xl border border-red-500/30 overflow-hidden divide-y divide-red-500/20 bg-red-500/5">
+                <div className="rounded-xl border border-red-500/30 overflow-hidden divide-y divide-red-500/20 bg-red-500/5">
                   {announcements.map((a) => (
                     <div key={a.id} className="flex items-center justify-between px-4 py-3">
                       <div>
-                        <span className="font-mono text-[9px] px-2 py-0.5 rounded-full border border-red-500 text-red-500 mr-2 font-bold">{a.severity}</span>
+                        <span className="font-mono text-[9px] px-2 py-0.5 rounded-md border border-red-500 text-red-500 mr-2 font-bold">{a.severity}</span>
                         <span className="font-mono text-sm text-[var(--text-primary)]">{a.text}</span>
                       </div>
                       <button
                         onClick={() => removeAnnouncement(a.id)}
-                        className="font-mono text-[9px] px-2.5 py-1 rounded-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors ml-3 shrink-0 font-bold"
+                        className="font-mono text-[9px] px-2.5 py-1 rounded-md border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors ml-3 shrink-0 font-bold"
                       >
                         REVOKE
                       </button>
@@ -580,6 +695,60 @@ export default function AdminView() {
                   <p className="font-mono text-[9px] text-gray-400 max-w-[120px] text-right truncate">{f.department}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deactivation Confirmation Warning Modal */}
+      {deactivationWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+          <div className="glass-card w-full max-w-lg rounded-xl p-6 sm:p-7 border border-red-500/40 shadow-2xl relative text-left">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-red-500/20 border border-red-500/40 text-red-500 flex items-center justify-center shrink-0">
+                <AlertTriangle size={20} />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-lg text-[var(--text-primary)] uppercase tracking-tight">
+                  Deactivation Warning: Active Events Scheduled
+                </h3>
+                <p className="font-mono text-xs text-red-500 mt-1 font-semibold">
+                  Location &quot;{deactivationWarning.building.label}&quot; is currently referenced by {deactivationWarning.referencedEvents.length} scheduled event{deactivationWarning.referencedEvents.length > 1 ? 's' : ''}.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-lg bg-red-500/10 border border-red-500/20 mb-4 space-y-2">
+              <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold">
+                Affected Scheduled Events:
+              </p>
+              <ul className="space-y-1.5 max-h-36 overflow-y-auto scrollbar-thin">
+                {deactivationWarning.referencedEvents.map((ev) => (
+                  <li key={ev.id} className="text-xs flex items-center justify-between gap-2 border-b border-red-500/10 pb-1">
+                    <span className="font-bold text-[var(--text-primary)]">{ev.title}</span>
+                    <span className="font-mono text-[10px] text-gray-400 shrink-0">{ev.date} · {ev.time}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed mb-6">
+              Deactivating this location will flag all referenced events on the public Events page and Directory with a temporary venue closure warning. Are you sure you want to proceed?
+            </p>
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={cancelDeactivation}
+                className="glass-btn glass-btn-ghost rounded-lg px-5 py-2.5 text-xs font-bold"
+              >
+                Cancel (Keep Operational)
+              </button>
+              <button
+                onClick={confirmDeactivation}
+                className="rounded-lg px-5 py-2.5 text-xs font-bold bg-red-500 hover:bg-red-600 text-white transition-colors shadow-md"
+              >
+                Proceed with Deactivation
+              </button>
             </div>
           </div>
         </div>

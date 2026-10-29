@@ -8,6 +8,7 @@
 export * from './buildings.js';
 export * from './exams.js';
 export * from './seating.js';
+export * from './mainBlockData.js';
 
 // ── Re-export from legacy data.js for backward compatibility ──
 export {
@@ -19,6 +20,7 @@ export {
   MARQUEE_ITEMS,
   TYPE_ICONS_MAP,
   FACULTY,
+  INITIAL_FACULTY,
   getFacultyById,
   ROOMS,
   getRoomById,

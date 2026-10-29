@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - sai
 
 # Required permissions for GitHub Pages deployment
 permissions:

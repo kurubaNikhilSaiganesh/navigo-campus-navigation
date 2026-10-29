@@ -71,12 +71,12 @@ export default function HeroSection({ onEnter }) {
         muted
         playsInline
         onCanPlay={() => setVideoLoaded(true)}
-        poster="/images/alts-poster.webp"
+        onError={() => setVideoLoaded(false)}
         aria-hidden="true"
       >
         {/* Drop your exported video files here when ready */}
-        <source src="/video/alts-intro.webm" type="video/webm" />
-        <source src="/video/alts-intro.mp4" type="video/mp4" />
+        <source src="/video/alts-intro.webm" type="video/webm" onError={() => setVideoLoaded(false)} />
+        <source src="/video/alts-intro.mp4" type="video/mp4" onError={() => setVideoLoaded(false)} />
       </video>
 
       {/* Main hero content */}

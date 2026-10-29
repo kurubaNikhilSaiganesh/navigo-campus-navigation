@@ -1,7 +1,7 @@
 import { useState, useContext } from 'react';
 import { BUILDINGS } from '../data';
 import { AppContext } from '../context/AppContext';
-import { Search, RotateCcw, ArrowRight } from 'lucide-react';
+import { Search, RotateCcw, ArrowRight, X, Info } from 'lucide-react';
 
 const FILTER_DEFS = [
   { key: 'all',        label: 'All Places' },
@@ -38,9 +38,10 @@ const TYPE_ICONS = {
 };
 
 export default function DirectoryView({ setSelectedBuilding }) {
-  const { navigateTo } = useContext(AppContext);
+  const { navigateTo, setFromNode, setToNode, locationStatus = {}, theme } = useContext(AppContext);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  const [inspectedBuilding, setInspectedBuilding] = useState(null);
 
   const buildings = BUILDINGS.filter((b) => b.type !== 'gate');
 
@@ -68,9 +69,23 @@ export default function DirectoryView({ setSelectedBuilding }) {
   };
 
   const handleViewDetails = (b) => {
-    setSelectedBuilding(b);
+    setInspectedBuilding(b);
+    if (setSelectedBuilding) setSelectedBuilding(b);
+  };
+
+  const handleRouteFrom = (id) => {
+    setFromNode(id);
+    setInspectedBuilding(null);
     navigateTo('route');
   };
+
+  const handleRouteTo = (id) => {
+    setToNode(id);
+    setInspectedBuilding(null);
+    navigateTo('route');
+  };
+
+  const isDark = theme === 'dark';
 
   return (
     <div className="px-4 md:px-8 py-8 max-w-6xl mx-auto page-enter space-y-6">
@@ -80,21 +95,21 @@ export default function DirectoryView({ setSelectedBuilding }) {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-1 border border-[var(--glass-border)] mb-2">
             <span className="w-2 h-2 rounded-full bg-amber-400" />
             <span className="font-mono text-[10px] text-amber-500 uppercase tracking-widest font-bold">
-              Campus Directory
+              Campus Directory · Independent Registry
             </span>
           </div>
           <h1 className="font-display text-4xl md:text-5xl font-black uppercase tracking-tight text-[var(--text-primary)]">
             Campus Places.
           </h1>
           <p className="text-[var(--text-secondary)] mt-1 text-sm md:text-base">
-            Find the buildings, departments, auditoriums, and facilities across ALTS campus.
+            Browse buildings, departments, auditoriums, and facilities across Meridian campus independently of the spatial map.
           </p>
         </div>
 
         {(searchQuery || activeFilter !== 'all') && (
           <button
             onClick={handleReset}
-            className="glass-btn glass-btn-sm rounded-full text-xs self-start sm:self-auto flex items-center gap-1.5"
+            className="glass-btn glass-btn-sm rounded-lg text-xs self-start sm:self-auto flex items-center gap-1.5"
           >
             <RotateCcw size={12} />
             <span>Reset Filters</span>
@@ -111,13 +126,13 @@ export default function DirectoryView({ setSelectedBuilding }) {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search buildings, departments, facilities (e.g. Library, Lab 3, Auditorium)..."
-          className="glass-input pl-12 pr-10 py-3.5 rounded-full text-sm font-medium shadow-xs"
+          placeholder="Search buildings, departments, facilities (e.g. Library, Tech Labs, Auditorium)..."
+          className="glass-input pl-12 pr-10 py-3.5 rounded-lg text-sm font-medium shadow-xs"
         />
         {searchQuery && (
           <button
             onClick={() => setSearchQuery('')}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-mono px-2 py-0.5 rounded-full glass-2 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-mono px-2 py-0.5 rounded-md glass-2 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             aria-label="Clear search"
           >
             ESC
@@ -133,7 +148,7 @@ export default function DirectoryView({ setSelectedBuilding }) {
             <button
               key={f.key}
               onClick={() => setActiveFilter(f.key)}
-              className={`text-xs font-semibold px-4 py-2 rounded-full transition-all duration-300 whitespace-nowrap select-none snap-start ${
+              className={`text-xs font-semibold px-4 py-2 rounded-md transition-all duration-300 whitespace-nowrap select-none snap-start ${
                 isActive
                   ? 'bg-[var(--gold)] text-white shadow-[var(--shadow-gold)] font-bold scale-105'
                   : 'glass-1 border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--glass-border-strong)] hover:scale-105 hover:shadow-lg'
@@ -154,13 +169,13 @@ export default function DirectoryView({ setSelectedBuilding }) {
 
       {/* Grid */}
       {filtered.length === 0 ? (
-        <div className="glass-card rounded-3xl p-12 text-center border border-dashed border-[var(--glass-border-strong)]">
+        <div className="glass-card rounded-xl p-12 text-center border border-dashed border-[var(--glass-border-strong)]">
           <p className="font-mono text-xs uppercase tracking-wider text-[var(--text-muted)]">
             No places match your search query
           </p>
           <button
             onClick={handleReset}
-            className="mt-4 glass-btn glass-btn-primary rounded-full text-xs py-2 px-6"
+            className="mt-4 glass-btn glass-btn-primary rounded-lg text-xs py-2 px-6"
           >
             Clear Filters
           </button>
@@ -175,7 +190,7 @@ export default function DirectoryView({ setSelectedBuilding }) {
             return (
               <div
                 key={b.id}
-                className="glass-card rounded-3xl p-6 flex flex-col justify-between cursor-pointer group border border-[var(--glass-border)] hover:border-[var(--glass-border-strong)] hover:shadow-xl transition-all duration-300 relative overflow-hidden"
+                className="glass-card rounded-xl p-6 flex flex-col justify-between cursor-pointer group border border-[var(--glass-border)] hover:border-[var(--glass-border-strong)] hover:shadow-xl transition-all duration-300 relative overflow-hidden"
                 onClick={() => handleViewDetails(b)}
                 role="button"
                 tabIndex={0}
@@ -186,7 +201,7 @@ export default function DirectoryView({ setSelectedBuilding }) {
                   {/* Icon + Tag */}
                   <div className="flex justify-between items-start mb-4 relative z-10">
                     <div
-                      className="w-11 h-11 rounded-2xl flex items-center justify-center glass-2 border border-[var(--glass-border)] shadow-xs transition-transform group-hover:scale-105"
+                      className="w-11 h-11 rounded-lg flex items-center justify-center glass-2 border border-[var(--glass-border)] shadow-xs transition-transform group-hover:scale-105"
                       style={{ color }}
                     >
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
@@ -194,12 +209,19 @@ export default function DirectoryView({ setSelectedBuilding }) {
                       </svg>
                     </div>
 
-                    <span
-                      className="font-mono text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-wider glass-1 border"
-                      style={{ color, borderColor: `${color}40`, background: `${color}12` }}
-                    >
-                      {b.type} · {b.code}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                      {locationStatus[b.id] === 'closed' && (
+                        <span className="font-mono text-[9px] font-bold px-2 py-0.5 rounded-full uppercase bg-red-500/15 text-red-500 border border-red-500/30">
+                          CLOSED
+                        </span>
+                      )}
+                      <span
+                        className="font-mono text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-wider glass-1 border"
+                        style={{ color, borderColor: `${color}40`, background: `${color}12` }}
+                      >
+                        {b.type} · {b.code}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Content */}
@@ -240,20 +262,121 @@ export default function DirectoryView({ setSelectedBuilding }) {
                       {floorCount} floor{floorCount !== 1 ? 's' : ''}
                     </span>
                     {b.accessible && (
-                      <span className="font-mono text-[10px] text-emerald-500 font-bold flex items-center gap-0.5" title="Wheelchair accessible">
+                      <span className="font-mono text-[10px] text-emerald-500 font-bold flex items-center gap-0.5" title="Architectural ramp indicated">
                         ♿
                       </span>
                     )}
                   </div>
 
                   <span className="font-mono text-xs font-semibold text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors flex items-center gap-1">
-                    <span>View Map</span>
+                    <span>Place Details</span>
                     <ArrowRight size={13} className="transform transition-transform group-hover:translate-x-1" />
                   </span>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ─── Location Details Modal ─── */}
+      {inspectedBuilding && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setInspectedBuilding(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="location-modal-title"
+        >
+          <div
+            className="rounded-xl p-6 sm:p-8 max-w-lg w-full border backdrop-blur-2xl shadow-2xl relative overflow-hidden"
+            style={{
+              background: isDark ? 'rgba(20, 20, 26, 0.96)' : 'rgba(255, 255, 255, 0.96)',
+              borderColor: 'var(--glass-border-strong)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <span className="font-mono text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-md inline-block mb-1 glass-1 border border-[var(--glass-border)]" style={{ color: TYPE_COLORS[inspectedBuilding.type] || '#007AFF' }}>
+                  {inspectedBuilding.type.toUpperCase()} · {inspectedBuilding.code}
+                </span>
+                <h3 id="location-modal-title" className="font-display font-bold text-2xl text-[var(--text-primary)]">
+                  {inspectedBuilding.label}
+                </h3>
+                <p className="font-mono text-xs text-amber-500 font-semibold mt-0.5">
+                  {inspectedBuilding.department}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setInspectedBuilding(null)}
+                className="glass-btn glass-btn-ghost rounded-lg w-8 h-8 flex items-center justify-center text-sm"
+                aria-label="Close modal"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {locationStatus[inspectedBuilding.id] === 'closed' && (
+              <div className="p-3.5 rounded-xl mb-4 text-left border border-red-500/30 bg-red-500/10 text-red-500 font-mono text-xs font-semibold flex items-center gap-2">
+                <span>⚠ NOTICE: This location is currently marked as TEMPORARILY CLOSED for maintenance by administration.</span>
+              </div>
+            )}
+
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed mb-5">
+              {inspectedBuilding.description}
+            </p>
+
+            {/* Facilities */}
+            <div className="mb-5">
+              <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2 font-semibold">
+                Facilities & Key Points
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {inspectedBuilding.facilities.map((fac) => (
+                  <span
+                    key={fac}
+                    className="text-xs font-mono px-3 py-1 rounded-md glass-1 border border-[var(--glass-border)] text-[var(--text-primary)]"
+                  >
+                    {fac}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Geographic Status Notice */}
+            <div
+              className="p-3.5 rounded-xl mb-6 text-left border flex items-start gap-2.5 text-xs font-mono"
+              style={{
+                background: isDark ? 'rgba(244, 180, 0, 0.08)' : 'rgba(244, 180, 0, 0.06)',
+                borderColor: 'rgba(244, 180, 0, 0.25)',
+              }}
+            >
+              <Info size={16} className="text-amber-500 shrink-0 mt-0.5" />
+              <div className="text-[var(--text-secondary)] leading-relaxed text-[11px]">
+                <strong className="text-[var(--text-primary)] font-semibold">Spatial Survey Notice:</strong> Building physical coordinates and outdoor pathways are pending ground survey. Physical wayfinding is paused; route calculation is available in simulation mode.
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row items-center gap-2.5">
+              <button
+                onClick={() => handleRouteFrom(inspectedBuilding.id)}
+                className="w-full sm:w-1/2 glass-btn rounded-lg py-2.5 px-4 text-xs font-semibold text-[var(--text-primary)]"
+              >
+                Simulate Route From Here
+              </button>
+              <button
+                onClick={() => handleRouteTo(inspectedBuilding.id)}
+                className="w-full sm:w-1/2 glass-btn glass-btn-primary rounded-lg py-2.5 px-4 text-xs font-bold shadow-md"
+              >
+                Simulate Route To Here →
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,54 +1,41 @@
-# ALTS — Campus Navigation & Student Platform
+# Meridian Campus Guide (NaviGO) — Campus Navigation & Student Platform
 
-<div align="center">
-  <h3>Navigate · Learn · Explore</h3>
-  <p>A professional campus navigation and student information platform built with React, Vite, and Supabase.</p>
-</div>
+> **PROTOTYPE & DEMONSTRATION NOTICE**  
+> Meridian Campus Guide is an independent student-led design demonstration and technical prototype. It is **not** an official college service or endorsed institution portal. Real physical campus GIS coordinates and survey maps have not yet been integrated; spatial map radar canvas, pathfinding BFS routes, walking distances, and time estimates are synthetic topological demonstrations.
 
 ---
 
-## Features
+## Overview
 
-### Campus Navigation
-- Interactive SVG campus map with BFS pathfinding
-- Building-to-building route finder with distance and time estimates
-- Zone filtering (Academic, Labs, Hostels, Services, Sports)
-- Building detail popups
+Meridian Campus Guide (NaviGO) delivers a cinematic, liquid-glass digital campus experience designed for desktop, tablet, and mobile browsers. It pairs rich visual design (frosted glassmorphism, animated radar sweep calibration, fluid typography) with functional student information modules including classroom discovery, exam seating lookup, timetable schedules, faculty directories, and session-local admin management.
 
-### Campus Directory
-- Searchable campus places directory
-- Category filters with detailed place information
-- Google Maps integration (when configured)
-- Facilities, opening hours, and distance information
+---
 
-### Examinations
-- MID and SEM exam schedule viewer
-- Countdown timer to next exam
-- Per-branch, per-section schedule breakdown
-- **Exam Seating Lookup** — enter registration number → get exact hall, room, row, bench, seat
-- **QR Code Scanning** — scan printed QR → instant seating lookup
+## Core Demonstration Journeys
 
-### Academic Tools
-- Class timetable (today and full week view)
-- Classes, Rooms, and Faculty directory
-- Admin-controlled room changes reflected in real-time
+### 1. Visitor Wayfinding Journey
+- **Home Page**: Live digital clock, daily timetable highlights, and marquee announcements.
+- **Search & Quick Links**: Global search (⌘K / Ctrl+K) across places, classrooms, faculty, and events.
+- **Location Details**: Interactive Location Directory with complete facility breakdowns, floor levels, department affiliations, and spatial status indicators.
+- **Simulated Route Finding**: Topological BFS pathfinder demonstrating node-to-node routing across campus benchmarks with simulated walking times and accessibility indicators.
 
-### Campus Life
-- Events showcase (bento grid layout)
-- Campus Notices board
-- Global search across all campus data
+### 2. Classroom Discovery Flow
+- **Academic Directory (`#classes`)**: Instant search by course title, course code (e.g. `CS-2A`), or room.
+- **Multi-Level Filtering**: Filter academic sections by Department or Building.
+- **Room Inspection (`#rooms`)**: Dedicated Room Details Modal showing capacity, building, floor level, assigned sections, and direct links to simulate navigation.
 
-### Administration
-- PIN-protected admin panel
-- Add/manage events, announcements, exam schedules
-- Seating data management (manual entry + CSV import)
-- QR code generation for seating
+### 3. Event & Venue Discovery Flow
+- **Bento Event Showcase (`#events`)**: Categorized campus events (TechFest, Workshops, Hackathons, Cultural).
+- **Venue Inspection**: Click any event venue to view the Venue Details Modal explaining facility specifications.
+- **Closure Alerts**: Immediate warning banners if the event venue has been marked as temporarily closed by administration.
 
-### Design
-- Premium glass UI with light/dark mode
-- Persistent theme preference
-- Mobile-responsive with floating bottom navigation
-- ALTS cinematic hero (CSS animation + video infrastructure)
+### 4. Admin Demonstration Flow
+- **Admin Panel (`#admin`)**: Session-local administration dashboard with real-time public propagation:
+  - **Events Management**: Add new events or delete obsolete listings.
+  - **Location & Venue Management**: Toggle campus buildings between Operational and Closed. When deactivating a location with scheduled events (e.g., Auditorium), the system displays a confirmation dialog warning that scheduled events will be impacted.
+  - **Room Overrides**: Reassign classes to alternate classrooms with immediate synchronization to Classes and Rooms views.
+  - **Timetable Reschedule**: Adjust slot times or rooms with live schedule updates.
+  - **Live Announcements**: Broadcast critical alerts directly to the dashboard and global marquee ticker.
 
 ---
 
@@ -56,193 +43,64 @@
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| Frontend | React 18 | UI framework |
-| Build | Vite | Fast dev server and bundler |
-| Styling | Tailwind CSS | Utility-first CSS |
-| Icons | Lucide React | Icon library |
-| Database | Supabase (PostgreSQL) | Backend data storage |
-| QR Scan | jsQR | Camera-based QR scanning |
-| QR Generate | qrcode | Admin QR code generation |
-| CI/CD | GitHub Actions | Automated build and deploy |
-| Hosting | GitHub Pages | Free static hosting |
+| **Core Framework** | React 18 | Declarative component architecture |
+| **Build & Tooling** | Vite 5.4 | Fast HMR dev server & optimized Rollup production bundling |
+| **Styling & Design System** | Tailwind CSS + Vanilla CSS | Curated HSL color palette, liquid-glass tokens, radar sweep animations |
+| **Icons** | Lucide React | Clean, accessible SVG iconography |
+| **QR Code Scanner** | jsQR | Camera-based student exam seating lookup |
+| **QR Code Generator** | qrcode | On-demand seating slip QR generation |
+| **Data Architecture** | React Context (`AppContext`) | Single source of truth with offline fallback resilience |
 
 ---
 
-## Local Development
+## Local Development & Setup
 
 ### Prerequisites
-- Node.js 18+ 
-- npm 9+
+- [Node.js](https://nodejs.org/) v18.0.0 or higher
+- npm v9.0.0 or higher
 
-### Setup
+### Installation & Launch
 
 ```bash
-# 1. Clone the repository
+# 1. Clone repository
 git clone https://github.com/your-username/mini-project.git
 cd mini-project
 
 # 2. Install dependencies
 npm install
 
-# 3. Copy environment template
-cp .env.example .env.local
-
-# 4. Start development server
+# 3. Start local development server
 npm run dev
 ```
 
-The app runs at `http://localhost:5173` with local demo data — no Supabase required.
+The application will start on `http://localhost:5173`.
 
----
+### Quality Assurance & Build Commands
 
-## Environment Variables
+```bash
+# Run ESLint validation
+npm run lint
 
-| Variable | Required | Description |
-|---|---|---|
-| `VITE_SUPABASE_URL` | Optional | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Optional | Supabase anon (public) key |
-| `VITE_ADMIN_PIN` | Optional | Admin panel access PIN (default: `alts2026`) |
+# Compile production bundle
+npm run build
 
-Copy `.env.example` to `.env.local` and fill in your values. **Never commit `.env.local`.**
-
----
-
-## Supabase Setup
-
-1. Create a project at [supabase.com](https://supabase.com)
-2. Go to **SQL Editor** and run the migration files in order:
-   ```
-   database/migrations/001_initial_schema.sql
-   database/migrations/002_exam_tables.sql
-   database/migrations/003_seating_tables.sql
-   ```
-3. Optionally run `database/seed.sql` for demo data
-4. Copy your project URL and anon key to `.env.local`
-
-> **Important:** Never use the `service_role` key in frontend code. It has full database access and must only be used in secure server-side functions.
-
----
-
-## Database Migrations
-
-Migration files are in `database/migrations/`. Run them in numerical order on a new Supabase project.
-
-| File | Creates |
-|---|---|
-| `001_initial_schema.sql` | places, faculty, rooms tables |
-| `002_exam_tables.sql` | exams, exam_subjects, exam_sessions |
-| `003_seating_tables.sql` | exam_seating, room_layouts, announcements |
-
----
-
-## CI/CD Pipeline
-
-Every push and pull request triggers the CI pipeline:
-
-```
-git push
-    ↓
-GitHub Actions
-    ↓
-npm ci → Lint → Security Audit → Build
-    ↓ (main branch only, after passing)
-Deploy to GitHub Pages
-    ↓
-Live ALTS Application
-```
-
-See [docs/cicd.md](docs/cicd.md) for a detailed explanation.
-
-### Setting Up GitHub Pages Deployment
-
-1. **Repository → Settings → Pages → Source:** Set to **GitHub Actions**
-2. **Repository → Settings → Secrets → Actions:** Add:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_ADMIN_PIN`
-3. Push to `main` — deployment runs automatically
-
----
-
-## Project Structure
-
-```
-mini-project/
-├── .github/workflows/
-│   ├── ci.yml          ← CI: lint + audit + build
-│   └── deploy.yml      ← Deploy to GitHub Pages
-├── database/
-│   ├── migrations/     ← SQL schema files
-│   └── seed.sql        ← Demo data
-├── docs/
-│   ├── architecture.md ← System design
-│   └── cicd.md         ← CI/CD explanation
-├── public/
-│   ├── 404.html        ← SPA routing fix for GitHub Pages
-│   └── logo.png
-├── src/
-│   ├── components/     ← React components
-│   │   └── ui/         ← Glass component system
-│   ├── context/        ← React context (AppContext)
-│   ├── data/           ← Local data modules
-│   ├── hooks/          ← Custom React hooks
-│   ├── lib/            ← Database, Supabase, QR utilities
-│   ├── App.jsx
-│   └── index.css       ← Design system tokens
-├── .env.example        ← Environment variable template
-├── .gitignore
-├── package.json
-├── vite.config.js
-└── tailwind.config.js
+# Preview production build locally
+npm run preview
 ```
 
 ---
 
-## DevSecOps
+## Spatial Map Calibration Notice
 
-This project demonstrates a DevSecOps workflow:
-
-| Practice | Implementation |
-|---|---|
-| Secret management | `.env.example` + GitHub Secrets |
-| Dependency security | `npm audit` in CI pipeline |
-| Access control | Supabase Row Level Security (RLS) |
-| Minimal permissions | GitHub Actions: `contents: read` only |
-| No sensitive data in repo | Demo data only; real data in Supabase |
-| Admin protection | PIN via environment variable |
+The campus map currently operates in **Calibration Standby Mode**:
+- Physical building coordinates, quadrant zoning, and real walking times are pending formal institutional survey integration.
+- The map canvas features organic topographic contours, calibration benchmark markers, radar sweep effects, and interactive pan/zoom controls.
+- To discover campus buildings and classrooms without spatial distortion, use the independent **Campus Directory (`#directory`)** and **Classrooms (`#classes`)** modules.
 
 ---
 
-## Branching Strategy
+## Browser Support & Accessibility
 
-```
-main         ← production (auto-deployed)
-feature/*    ← feature branches (CI runs on PR)
-fix/*        ← bug fixes
-```
-
----
-
-## Architecture
-
-See [docs/architecture.md](docs/architecture.md) for the full system architecture diagram.
-
----
-
-## Future Improvements
-
-- [ ] Student login with Supabase Auth
-- [ ] Real-time announcements via Supabase Realtime
-- [ ] Push notifications for exam reminders
-- [ ] CSV bulk import for seating data
-- [ ] Offline support with service workers
-- [ ] Native mobile app (React Native)
-- [ ] Integration with college ERP system
-
----
-
-## Acknowledgements
-
-Built as a demonstration of modern web development and DevSecOps practices for college project presentation.
-
-**Tech Stack Credits:** React · Vite · Tailwind CSS · Supabase · GitHub Actions
+- **Responsive Viewports**: Fully responsive across mobile (375px+), tablet (768px+), and desktop (1024px - 4K).
+- **Reduced Motion**: Full support for `prefers-reduced-motion: reduce`, disabling continuous radar sweeps, infinite loops, and heavy transition springs for sensitive users.
+- **Theme Modes**: Liquid-glass dark mode and high-contrast light mode with automatic system theme synchronization.

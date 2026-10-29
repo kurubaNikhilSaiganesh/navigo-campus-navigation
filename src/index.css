@@ -84,14 +84,14 @@
     /* Now Apple Blue */
     --shadow-glass: 0 4px 20px rgba(0, 0, 0, 0.08);
 
-    /* Border radius scale */
-    --radius-xs: 12px;
-    --radius-sm: 20px;
-    --radius-md: 28px;
-    --radius-lg: 36px;
-    --radius-xl: 48px;
-    --radius-2xl: 64px;
-    --radius-full: 9999px;
+    /* Border radius scale — Architectural & balanced */
+    --radius-xs: 6px;    /* tags, badges, small chips */
+    --radius-sm: 8px;    /* buttons, inputs, segmented items */
+    --radius-md: 12px;   /* standard cards, inner panels */
+    --radius-lg: 16px;   /* main content panels, dialogs, drawers */
+    --radius-xl: 20px;   /* hero panels, large containers */
+    --radius-2xl: 24px;  /* max container radius */
+    --radius-full: 9999px; /* circular avatars, status dots */
 
     /* Motion */
     --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -324,7 +324,7 @@
     font-size: 0.875rem;
     font-weight: 600;
     line-height: 1;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-sm);
     border: 1px solid var(--glass-border);
     cursor: pointer;
     user-select: none;
@@ -472,18 +472,18 @@
   .glass-btn-sm {
     padding: 6px 14px;
     font-size: 0.8rem;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-xs);
   }
 
   .glass-btn-lg {
     padding: 14px 28px;
     font-size: 1rem;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-sm);
   }
 
   .glass-btn-icon {
     padding: 10px;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-sm);
     min-width: 40px;
   }
 
@@ -492,8 +492,8 @@
     width: 100%;
     background: var(--glass-2);
     border: 1px solid var(--glass-border);
-    border-radius: var(--radius-full);
-    padding: 12px 20px;
+    border-radius: var(--radius-sm);
+    padding: 12px 18px;
     font-family: 'Space Grotesk', sans-serif;
     font-size: 0.9rem;
     color: var(--text-primary);
@@ -524,7 +524,7 @@
     width: 100%;
     background: var(--glass-2);
     border: 1px solid var(--glass-border);
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-sm);
     padding: 12px 40px 12px 18px;
     font-family: 'Space Grotesk', sans-serif;
     font-size: 0.9rem;
@@ -559,8 +559,8 @@
     width: 100%;
     background: var(--glass-2);
     border: 1px solid var(--glass-border);
-    border-radius: var(--radius-full);
-    padding: 12px 20px;
+    border-radius: var(--radius-sm);
+    padding: 12px 18px;
     font-family: 'Space Grotesk', sans-serif;
     font-size: 0.9rem;
     color: var(--text-primary);
@@ -585,7 +585,7 @@
     font-size: 0.875rem;
     font-weight: 700;
     line-height: 1;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-sm);
     border: 1px solid transparent;
     cursor: pointer;
     background: var(--gold);
@@ -617,7 +617,7 @@
     font-size: 0.85rem;
     font-weight: 600;
     line-height: 1;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-sm);
     border: 1px solid var(--glass-border);
     background: var(--glass-2);
     color: var(--text-primary);
@@ -649,7 +649,7 @@
     font-size: 0.85rem;
     font-weight: 600;
     line-height: 1;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-sm);
     border: 1px solid transparent;
     background: var(--green);
     color: #ffffff;
@@ -669,7 +669,7 @@
     backdrop-filter: var(--blur-md);
     -webkit-backdrop-filter: var(--blur-md);
     border: 1px solid var(--glass-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
     transition: all var(--t-normal) var(--ease-expo);
   }
@@ -691,7 +691,7 @@
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-xs);
     border: 1px solid currentColor;
   }
 
@@ -727,7 +727,7 @@
 
   /* ── Sidebar & Control Panel ───────────────────────────────── */
   .curved-control-panel {
-    border-radius: 32px;
+    border-radius: var(--radius-lg);
     background: var(--sidebar-bg);
     backdrop-filter: blur(48px);
     -webkit-backdrop-filter: blur(48px);
@@ -739,7 +739,7 @@
   /* ── 3D Liquid Glass Utilities ──────────────────────────────── */
   .liquid-glass-icon {
     position: relative;
-    border-radius: 28px;
+    border-radius: var(--radius-md);
     background-color: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
@@ -886,7 +886,7 @@
     top: 0;
     left: 4px;
     right: 4px;
-    border-radius: 9999px;
+    border-radius: var(--radius-sm);
     pointer-events: none;
     z-index: 1;
     background: linear-gradient(135deg, rgba(244, 180, 0, 0.28) 0%, rgba(244, 180, 0, 0.12) 100%);
@@ -927,7 +927,7 @@
     width: 100%;
     padding: 10px 14px;
     border: none;
-    border-radius: 9999px;
+    border-radius: var(--radius-sm);
     background: transparent;
     color: var(--sidebar-text);
     font-family: 'Space Grotesk', sans-serif;
@@ -981,7 +981,7 @@
     width: 100%;
     padding: 9px 12px;
     border: none;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-sm);
     background: transparent;
     color: var(--sidebar-text);
     font-family: 'Space Grotesk', sans-serif;
@@ -1097,7 +1097,7 @@
     padding: 7px 16px;
     font-size: 0.8rem;
     font-weight: 600;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-sm);
     border: 1px solid var(--glass-border);
     background: transparent;
     color: var(--text-muted);
@@ -1166,11 +1166,64 @@
   .text-gold-glow {
     text-shadow: 0 0 20px rgba(244, 180, 0, 0.4);
   }
+
+  /* ── Radar Sweep & Topographic Animations ───────────────────── */
+  .radar-sweep-beam {
+    transform-origin: 400px 300px;
+    animation: radar-sweep-anim 8s linear infinite;
+  }
+
+  .topo-contour {
+    animation: topo-pulse-anim 6s ease-in-out infinite alternate;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .radar-sweep-beam {
+      animation: none !important;
+      opacity: 0.3 !important;
+    }
+    .topo-contour {
+      animation: none !important;
+    }
+    .route-path {
+      animation: none !important;
+    }
+    .ticker-track {
+      animation: none !important;
+    }
+    .pulse-marker {
+      animation: none !important;
+    }
+  }
 }
 
 /* ================================================================
    KEYFRAMES
    ================================================================ */
+
+@keyframes radar-sweep-anim {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes topo-pulse-anim {
+  0% {
+    opacity: 0.3;
+    stroke-width: 1px;
+  }
+  50% {
+    opacity: 0.65;
+    stroke-width: 1.5px;
+  }
+  100% {
+    opacity: 0.3;
+    stroke-width: 1px;
+  }
+}
 
 @keyframes page-in {
   from {

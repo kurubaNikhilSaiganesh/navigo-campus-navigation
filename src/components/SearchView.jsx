@@ -4,12 +4,18 @@ import { useState, useContext, useRef, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import { BUILDINGS } from '../data/buildings';
 import { EXAMS } from '../data/exams';
-import { FACULTY, ROOMS, EVENTS } from '../data';
+import { FACULTY, ROOMS, EVENTS, MAIN_BLOCK_ROOMS } from '../data';
 import { GlassBadge } from './ui/GlassBadge';
 import { GlassSkeleton } from './ui/GlassSkeleton';
 
 function buildSearchIndex() {
   return [
+    ...MAIN_BLOCK_ROOMS.map((r) => ({
+      id: r.id, type: 'main_block', category: 'Main Block',
+      title: r.name, subtitle: `Level ${r.floor} · ${r.number} · ${r.category}`,
+      tags: [r.category, r.department, `Floor ${r.floor}`, r.number, r.year ? `Year ${r.year}` : '', r.type],
+      action: 'route', payload: r.id,
+    })),
     ...BUILDINGS.filter((b) => b.type !== 'gate').map((b) => ({
       id: b.id, type: 'place', category: 'Campus Place',
       title: b.label, subtitle: `${b.code} · ${b.department}`, tags: b.tags,
@@ -70,9 +76,18 @@ const TYPE_ICON = {
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
     </svg>
   ),
+  main_block: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <path d="M3 9h18"/>
+      <path d="M9 21V9"/>
+      <path d="M15 21V9"/>
+    </svg>
+  ),
 };
 
 const TYPE_BADGE = {
+  main_block: 'blue',
   place:   'blue',
   exam:    'gold',
   faculty: 'green',
@@ -83,8 +98,8 @@ const TYPE_BADGE = {
 function ResultItem({ item, onNavigate }) {
   return (
     <button
-      className="w-full text-left glass-card rounded-2xl p-4 flex items-start gap-3 hover:border-[color:var(--glass-border-strong)] transition-all select-none"
-      onClick={() => onNavigate(item.action)}
+      className="w-full text-left glass-card rounded-xl p-4 flex items-start gap-3 hover:border-[color:var(--glass-border-strong)] transition-all select-none"
+      onClick={() => onNavigate(item.action, item.payload)}
       aria-label={`Go to ${item.title}`}
     >
       <div
@@ -112,14 +127,14 @@ function ResultItem({ item, onNavigate }) {
 const QUICK_ACTIONS = [
   { label: 'Exam Seating', view: 'seating', icon: '🎯' },
   { label: 'Timetable',    view: 'timetable', icon: '🕐' },
-  { label: 'Campus Map',   view: 'route', icon: '🧭' },
+  { label: 'Main Block',   view: 'route', icon: '🏛️' },
   { label: 'Faculty',      view: 'faculty', icon: '🎓' },
   { label: 'Events',       view: 'events', icon: '⚡' },
   { label: 'Rooms',        view: 'rooms', icon: '🏗️' },
 ];
 
 export default function SearchView() {
-  const { navigateTo } = useContext(AppContext);
+  const { navigateTo, locateOnMap } = useContext(AppContext);
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const inputRef = useRef(null);
@@ -180,8 +195,8 @@ export default function SearchView() {
         <input
           ref={inputRef}
           type="search"
-          className="glass-input pl-12 text-base md:text-lg rounded-full"
-          style={{ borderRadius: '9999px', padding: '15px 20px 15px 48px' }}
+          className="glass-input pl-12 text-base md:text-lg rounded-lg"
+          style={{ borderRadius: '8px', padding: '15px 20px 15px 48px' }}
           placeholder="Search places, faculty, rooms, events, exams..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -211,14 +226,24 @@ export default function SearchView() {
                 </p>
                 <div className="space-y-2">
                   {items.map((item) => (
-                    <ResultItem key={item.id} item={item} onNavigate={navigateTo} />
+                    <ResultItem
+                      key={item.id}
+                      item={item}
+                      onNavigate={(action, payload) => {
+                        if (action === 'route' && payload) {
+                          locateOnMap(payload);
+                        } else {
+                          navigateTo(action);
+                        }
+                      }}
+                    />
                   ))}
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="glass-card rounded-3xl p-10 text-center">
+          <div className="glass-card rounded-xl p-10 text-center">
             <p className="font-mono text-sm" style={{ color: 'var(--text-muted)' }}>
               No results for &ldquo;{query}&rdquo;
             </p>
@@ -228,7 +253,7 @@ export default function SearchView() {
           </div>
         )
       ) : (
-        /* Quick actions — Fully Rounded Pills */
+        /* Quick access — Refined Rounded Cards */
         <div>
           <p
             className="font-mono text-[10px] uppercase tracking-widest mb-4 font-semibold"
@@ -241,7 +266,7 @@ export default function SearchView() {
               <button
                 key={qa.view}
                 onClick={() => navigateTo(qa.view)}
-                className="glass-card rounded-full px-5 py-3.5 text-left flex items-center gap-3 hover:border-[color:var(--glass-border-strong)] transition-all hover:scale-[1.02] shadow-xs select-none"
+                className="glass-card rounded-xl px-5 py-3.5 text-left flex items-center gap-3 hover:border-[color:var(--glass-border-strong)] transition-all hover:scale-[1.02] shadow-xs select-none"
               >
                 <span className="text-xl shrink-0">{qa.icon}</span>
                 <span className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>

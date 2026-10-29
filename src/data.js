@@ -262,7 +262,7 @@ export function calcRouteStats(path) {
     const b = getBuildingById(id);
     return b ? b.accessible : true;
   });
-  return { distance: realDist, time: walkMin, accessible };
+  return { distance: realDist, time: walkMin, accessible, isDemonstration: true };
 }
 
 // ============================================================
@@ -402,6 +402,7 @@ export const FACULTY = [
     email: "r.kumar@campus.edu",
     phone: "Ext. 2201",
     buildingId: "academic_a",
+    bio: "Head of Computer Science with over 18 years of experience in distributed algorithms, graph theory, and curriculum design.",
   },
   {
     id: "fac_002",
@@ -414,6 +415,7 @@ export const FACULTY = [
     email: "m.sharma@campus.edu",
     phone: "Ext. 2202",
     buildingId: "academic_a",
+    bio: "Focuses on Linux kernel architecture, virtualization systems, and performance tuning for edge computing devices.",
   },
   {
     id: "fac_003",
@@ -426,18 +428,20 @@ export const FACULTY = [
     email: "a.nair@campus.edu",
     phone: "Ext. 2301",
     buildingId: "academic_a",
+    bio: "Specialist in modern web architecture, distributed transactional databases, and scalable cloud application development.",
   },
   {
     id: "fac_004",
-    name: "Dr. Priya Anand",
+    name: "Dr. Priya Sharma",
     designation: "Professor",
     department: "Computer Science",
-    subjects: ["Artificial Intelligence", "Machine Learning"],
+    subjects: ["Artificial Intelligence", "Machine Learning", "Neural Networks"],
     classIds: ["cs_4a"],
     office: "A-203, Academic Block A",
-    email: "p.anand@campus.edu",
-    phone: "Ext. 2203",
+    email: "faculty@meridian.demo",
+    phone: "+91 98765 43210 (Ext. 2203)",
     buildingId: "academic_a",
+    bio: "Senior Professor of Computer Science specializing in Artificial Intelligence, Machine Learning, and Neural Networks with 14+ years of academic research and teaching experience.",
   },
   {
     id: "fac_005",
@@ -450,6 +454,7 @@ export const FACULTY = [
     email: "s.verma@campus.edu",
     phone: "Ext. 3101",
     buildingId: "academic_b",
+    bio: "Expert in computational fluid dynamics and high-efficiency thermodynamic cycles for sustainable energy systems.",
   },
   {
     id: "fac_006",
@@ -462,6 +467,7 @@ export const FACULTY = [
     email: "a.reddy@campus.edu",
     phone: "Ext. 3201",
     buildingId: "academic_b",
+    bio: "Consultant for resilient earthquake-resistant structures and advanced materials testing in civic infrastructure.",
   },
   {
     id: "fac_007",
@@ -474,6 +480,7 @@ export const FACULTY = [
     email: "k.patel@campus.edu",
     phone: "Ext. 2302",
     buildingId: "academic_a",
+    bio: "Active researcher in cryptographic protocols, zero-trust cloud network topologies, and vulnerability analysis.",
   },
   {
     id: "fac_008",
@@ -486,11 +493,15 @@ export const FACULTY = [
     email: "v.menon@campus.edu",
     phone: "Ext. 4101",
     buildingId: "academic_c",
+    bio: "Dean of Management Studies advising corporate boards on quantitative business strategy and executive decision systems.",
   },
 ];
 
-export function getFacultyById(id) {
-  return FACULTY.find((f) => f.id === id);
+export const INITIAL_FACULTY = FACULTY;
+
+export function getFacultyById(id, facultyList = FACULTY) {
+  const list = Array.isArray(facultyList) && facultyList.length > 0 ? facultyList : FACULTY;
+  return list.find((f) => f.id === id) || FACULTY.find((f) => f.id === id);
 }
 
 // ============================================================
@@ -691,3 +702,7 @@ export function getCurrentDay() {
   const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
   return days[new Date().getDay()];
 }
+
+// ── Export Main Block spatial & floor plan data ──
+export * from './data/mainBlockData.js';
+

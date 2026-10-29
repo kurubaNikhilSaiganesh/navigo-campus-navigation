@@ -1,9 +1,10 @@
 import { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import RouteController from './RouteController';
-import { TIMETABLE, getCurrentDay, getRoomById } from '../data';
-import { ArrowRight, Sparkles, Navigation, BookOpen, Building, Users, Clock, Trophy } from 'lucide-react';
+import { TIMETABLE, getCurrentDay, getRoomById, EVENTS as INITIAL_EVENTS } from '../data';
+import { ArrowRight, Sparkles, Navigation, BookOpen, Building, Users, Clock, Trophy, Calendar, Bell, MapPin } from 'lucide-react';
 
+// ── Slot helpers ─────────────────────────────────────────────
 function getCurrentSlot(classId) {
   const now = new Date();
   const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
@@ -22,7 +23,7 @@ function getNextSlot(classId) {
   ).sort((a, b) => a.startTime.localeCompare(b.startTime))[0] || null;
 }
 
-// Staff slot helpers
+// ── Staff slot helpers ────────────────────────────────────────
 function getCurrentStaffSlot(facultyId) {
   const now = new Date();
   const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
@@ -48,10 +49,7 @@ function getStaffScheduleForToday(facultyId) {
   ).sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 
-// Default class context: CS-2A
-const USER_CLASS = 'cs_2a';
-const STAFF_USER = 'fac_002'; // Dr. Priya Sharma
-
+// ── Static data ───────────────────────────────────────────────
 const CORE_SYSTEMS = [
   {
     id: 'route',
@@ -127,16 +125,30 @@ const WHAT_IT_SOLVES = [
   },
 ];
 
+const DEFAULT_NOTICES = [
+  { id: 'dn_1', text: 'Library timings extended to 9 PM on weekdays.', severity: 'INFO' },
+  { id: 'dn_2', text: 'Semester exam schedule published — check the Exams section.', severity: 'INFO' },
+];
+
+// ── Main export ───────────────────────────────────────────────
 export default function DashboardView() {
   const { userRole } = useContext(AppContext);
-  return userRole === 'staff' ? <StaffDashboard /> : <StudentDashboard />;
+  return userRole === 'staff' || userRole === 'admin'
+    ? <StaffDashboard />
+    : <PublicDashboard />;
 }
 
-function StudentDashboard() {
-  const { navigateTo, announcements, removeAnnouncement } = useContext(AppContext);
-  const date = new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+// ─────────────────────────────────────────────────────────────
+// PUBLIC DASHBOARD  (students + unauthenticated visitors)
+// ─────────────────────────────────────────────────────────────
+function PublicDashboard() {
+  const { navigateTo, announcements, removeAnnouncement, events } = useContext(AppContext);
 
-  // Live Clock State
+  const date = new Date().toLocaleDateString('en-US', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  });
+
+  // Live clock
   const [time, setTime] = useState(new Date());
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -144,10 +156,17 @@ function StudentDashboard() {
   }, []);
   const timeString = time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: false });
 
-  const currentSlot = getCurrentSlot(USER_CLASS);
-  const nextSlot    = getNextSlot(USER_CLASS);
-  const displaySlot = currentSlot || nextSlot;
-  const nextRoom    = displaySlot ? getRoomById(displaySlot.roomId) : null;
+  // Campus Highlights data
+  const displayEvents  = (events && events.length ? events : INITIAL_EVENTS).slice(0, 3);
+  const allNotices     = [...announcements, ...DEFAULT_NOTICES];
+  const displayNotices = allNotices.slice(0, 2);
+
+  const quickLinks = [
+    { label: 'Main Block',        id: 'main-block', icon: <Building size={16} /> },
+    { label: 'Campus Directory',  id: 'directory',  icon: <MapPin size={16} /> },
+    { label: 'Faculty Directory', id: 'faculty',    icon: <Users size={16} /> },
+    { label: 'Timetable',         id: 'timetable',  icon: <Clock size={16} /> },
+  ];
 
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 space-y-8 page-enter">
@@ -155,7 +174,7 @@ function StudentDashboard() {
       {/* ── Admin announcement banner ── */}
       {announcements.length > 0 && (
         <div
-          className="glass-card p-4 md:p-5 flex flex-col gap-2 rounded-2xl"
+          className="glass-card p-4 md:p-5 flex flex-col gap-2 rounded-xl"
           style={{
             background: 'rgba(239, 68, 68, 0.08)',
             borderColor: 'rgba(239, 68, 68, 0.25)',
@@ -171,7 +190,7 @@ function StudentDashboard() {
               </div>
               <button
                 onClick={() => removeAnnouncement(a.id)}
-                className="glass-btn glass-btn-ghost glass-btn-sm text-[10px] text-red-500 hover:text-red-600 rounded-full shrink-0"
+                className="glass-btn glass-btn-ghost glass-btn-sm text-[10px] text-red-500 hover:text-red-600 rounded-md shrink-0"
                 aria-label="Dismiss announcement"
               >
                 Dismiss
@@ -181,17 +200,16 @@ function StudentDashboard() {
         </div>
       )}
 
-      {/* ── Hero Glass Showcase ── */}
-      {/*
-        CRITICAL: Do NOT add backdrop-filter here. The Hero card must use a
-        solid background. If backdrop-filter is active on the Hero, the GPU
-        compositing layer will sample scrolled content (RouteController, etc.)
-        from behind and bleed it through as a white glow around the buttons.
-        The --bg-surface color is already textured enough to look premium
-        without needing blur-through from lower layers.
+      {/* ── Hero Glass Showcase ──
+          CRITICAL: Do NOT add backdrop-filter here. The Hero card must use a
+          solid background. If backdrop-filter is active on the Hero, the GPU
+          compositing layer will sample scrolled content (RouteController, etc.)
+          from behind and bleed it through as a white glow around the buttons.
+          The --bg-surface color is already textured enough to look premium
+          without needing blur-through from lower layers.
       */}
       <div
-        className="rounded-3xl p-6 md:p-10 relative overflow-hidden"
+        className="rounded-xl p-6 md:p-10 relative overflow-hidden"
         style={{
           border: '1px solid var(--glass-border)',
           boxShadow: 'var(--shadow-sm), inset 0 1px 1px rgba(255,255,255,0.5)',
@@ -204,10 +222,10 @@ function StudentDashboard() {
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
           <div className="max-w-xl">
             {/* Live date pill — no backdrop-filter (already inside Hero which is isolated) */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-4 border border-[var(--glass-border)] transition-all duration-300 cursor-default" style={{ background: 'rgba(0,0,0,0.04)' }}>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md mb-4 border border-[var(--glass-border)] transition-all duration-300 cursor-default" style={{ background: 'rgba(0,0,0,0.04)' }}>
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="font-mono text-[10px] font-semibold tracking-wider uppercase text-[var(--text-muted)]">
-                {date} · ALTS CAMPUS
+                {date} · MERIDIAN CAMPUS
               </span>
             </div>
 
@@ -225,7 +243,7 @@ function StudentDashboard() {
 
             {/* Giant Liquid Clock */}
             <div className="mb-4">
-              <h1 
+              <h1
                 className="liquid-text font-display font-black leading-none tracking-tighter"
                 style={{ fontSize: 'clamp(5rem, 12vw, 9rem)', marginLeft: '-0.05em' }}
               >
@@ -234,7 +252,7 @@ function StudentDashboard() {
             </div>
 
             <p className="mt-4 text-[var(--text-secondary)] font-mono text-sm uppercase tracking-widest leading-relaxed">
-              "Time is the canvas of your day. Paint it well."
+              &quot;Find your campus. Find your room. Find what&apos;s on today.&quot;
             </p>
           </div>
 
@@ -242,7 +260,7 @@ function StudentDashboard() {
           <div className="flex flex-col gap-3 sm:items-end w-full sm:w-auto">
             <button
               onClick={() => navigateTo('route')}
-              className="glass-btn glass-btn-primary glass-btn-lg rounded-full shadow-lg flex items-center justify-center gap-2 w-full sm:w-auto"
+              className="glass-btn glass-btn-primary glass-btn-lg rounded-lg shadow-lg flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               <Navigation size={18} />
               <span>Explore Campus</span>
@@ -263,114 +281,139 @@ function StudentDashboard() {
                 Timetable
               </button>
             </div>
-
-            <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider text-right">
-              Welcome back, Aarav · BCA Year 2
-            </p>
           </div>
         </div>
       </div>
 
-      {/* ── Route Finder + Next Stop Section ── */}
+      {/* ── Campus Highlights ── */}
+      <div className="space-y-4 relative z-10">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            <Sparkles size={16} className="text-amber-400" />
+            <h2 className="font-display font-bold text-lg uppercase tracking-tight text-[var(--text-primary)]">
+              Campus Highlights
+            </h2>
+          </div>
+          <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+            Live Updates
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* Left: Upcoming Events */}
+          <div className="glass-card rounded-xl p-6 border border-[var(--glass-border)] space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar size={16} className="text-blue-500" />
+              <h3 className="font-display font-bold text-sm uppercase tracking-tight text-[var(--text-primary)]">
+                Upcoming Events
+              </h3>
+            </div>
+
+            {displayEvents.length > 0 ? (
+              <div className="space-y-3">
+                {displayEvents.map((ev) => (
+                  <div
+                    key={ev.id}
+                    className="flex items-start gap-3 p-3 rounded-lg border border-[var(--glass-border)] bg-black/[0.02] dark:bg-white/[0.02] hover:border-[var(--glass-border-strong)] transition-colors"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm text-[var(--text-primary)] truncate">{ev.title}</p>
+                      <p className="font-mono text-[11px] text-[var(--text-muted)] mt-0.5">
+                        {ev.date} · {ev.venueName || ev.venue}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-[var(--text-muted)] italic">No upcoming events.</p>
+            )}
+
+            <button
+              onClick={() => navigateTo('events')}
+              className="font-mono text-xs text-amber-500 hover:text-amber-600 font-semibold flex items-center gap-1 transition-colors mt-2"
+            >
+              <span>View All Events</span>
+              <ArrowRight size={12} />
+            </button>
+          </div>
+
+          {/* Right: Notices + Quick Access */}
+          <div className="space-y-4">
+
+            {/* Important Notices */}
+            <div className="glass-card rounded-xl p-5 border border-[var(--glass-border)] space-y-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Bell size={16} className="text-amber-500" />
+                <h3 className="font-display font-bold text-sm uppercase tracking-tight text-[var(--text-primary)]">
+                  Notices
+                </h3>
+              </div>
+              {displayNotices.map((n) => (
+                <div key={n.id} className="flex items-start gap-2.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
+                  <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{n.text}</p>
+                </div>
+              ))}
+              {displayNotices.length === 0 && (
+                <p className="text-xs text-[var(--text-muted)] italic">No active notices.</p>
+              )}
+            </div>
+
+            {/* Quick Access */}
+            <div className="glass-card rounded-xl p-5 border border-[var(--glass-border)]">
+              <h3 className="font-display font-bold text-sm uppercase tracking-tight text-[var(--text-primary)] mb-3">
+                Popular Destinations
+              </h3>
+              <div className="grid grid-cols-2 gap-2.5">
+                {quickLinks.map((link) => (
+                  <button
+                    key={link.id}
+                    onClick={() => navigateTo(link.id)}
+                    className="glass-btn text-xs rounded-lg py-2.5 px-3 flex items-center gap-2 hover:shadow-md transition-all"
+                  >
+                    <span className="text-[var(--text-muted)]">{link.icon}</span>
+                    <span className="text-left leading-tight">{link.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* ── Route Finder Section ── */}
       <div className="space-y-4 relative z-30">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
             <Sparkles size={16} className="text-amber-400" />
             <h2 className="font-display font-bold text-lg uppercase tracking-tight text-[var(--text-primary)]">
-              Instant Wayfinding & Next Stop
+              Instant Wayfinding
             </h2>
           </div>
           <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
-            Live Schedule Sync
+            BFS Route Engine
           </span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-30">
-          <div className="lg:col-span-2 relative z-40">
-            <RouteController />
-          </div>
-
-          {/* Next Stop Card */}
-          <div
-            className="glass-card glass-2 rounded-3xl p-6 md:p-7 flex flex-col justify-between border border-[var(--glass-border-strong)] shadow-lg relative overflow-hidden"
-          >
-            {/* Ambient accent blob removed to prevent WebKit scroll bleed */}
-
-            <div>
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <span className="inline-block px-3 py-1 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider mb-2 glass-1 border border-[var(--glass-border)] text-amber-500 magic-hover hover:scale-105 transition-all duration-300 cursor-default">
-                    {currentSlot ? 'Current Class' : nextSlot ? 'Next Stop' : 'Schedule Finished'}
-                  </span>
-                  {displaySlot ? (
-                    <>
-                      <h3 className="font-mono text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
-                        {nextRoom?.number || '—'}
-                      </h3>
-                      <p className="text-xs text-[var(--text-secondary)] mt-1.5 leading-snug font-medium">
-                        {displaySlot.subject}<br />
-                        <span className="font-mono text-[var(--text-muted)] text-[11px]">{displaySlot.startTime} – {displaySlot.endTime}</span>
-                      </p>
-                    </>
-                  ) : (
-                    <h3 className="font-mono text-xl font-bold text-[var(--text-muted)]">No Classes Left</h3>
-                  )}
-                </div>
-
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg liquid-glass-icon bg-vibrant-purple"
-                >
-                  <Clock size={26} strokeWidth={2.5} className="text-white drop-shadow-md" />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-[var(--glass-border)]">
-              {displaySlot ? (
-                <>
-                  <div className="w-full bg-black/5 dark:bg-white/5 h-2 rounded-full mb-3 overflow-hidden p-0.5">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{
-                        width: currentSlot ? '65%' : '20%',
-                        background: 'linear-gradient(90deg, var(--gold) 0%, var(--green) 100%)',
-                      }}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-mono text-[11px] text-[var(--text-muted)] flex items-center gap-1.5">
-                      <span className={`w-2 h-2 rounded-full ${currentSlot ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`} />
-                      {currentSlot ? 'In Progress' : 'Upcoming Next'}
-                    </span>
-                    <button
-                      onClick={() => navigateTo('route')}
-                      className="glass-btn glass-btn-primary glass-btn-sm rounded-full text-xs font-bold flex items-center gap-1"
-                    >
-                      <span>Route Here</span>
-                      <ArrowRight size={12} />
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <p className="font-mono text-xs text-[var(--text-muted)] text-center py-2">
-                  All classes for today are complete.
-                </p>
-              )}
-            </div>
-          </div>
+        <div className="relative z-40">
+          <RouteController />
         </div>
       </div>
 
       {/* ── What NaviGO Solves ── */}
       <div className="space-y-4 relative z-10">
         <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-widest px-1">
-          Designed for ALTS Students & Visitors
+          Designed for Meridian Students &amp; Visitors
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {WHAT_IT_SOLVES.map((item) => (
             <div
               key={item.q}
-              className="glass-card rounded-3xl p-6 border border-[var(--glass-border)] hover:border-[var(--glass-border-strong)] transition-all flex flex-col justify-between"
+              className="glass-card rounded-xl p-6 border border-[var(--glass-border)] hover:border-[var(--glass-border-strong)] transition-all flex flex-col justify-between"
             >
               <div>
                 <span className="text-3xl mb-4 block" role="img" aria-label="Feature icon">{item.icon}</span>
@@ -396,18 +439,18 @@ function StudentDashboard() {
             <button
               key={sys.id}
               onClick={() => navigateTo(sys.id)}
-              className="glass-card rounded-3xl p-6 text-left flex flex-col justify-between group border border-[var(--glass-border)] hover:border-[var(--glass-border-strong)] hover:shadow-lg transition-all duration-200 relative overflow-hidden"
+              className="glass-card rounded-xl p-6 text-left flex flex-col justify-between group border border-[var(--glass-border)] hover:border-[var(--glass-border-strong)] hover:shadow-lg transition-all duration-200 relative overflow-hidden"
             >
               {/* Ambient accent corner glow removed to prevent WebKit scroll bleed */}
 
               <div>
                 <div className="flex items-start justify-between mb-4">
-                  <div className={`w-14 h-14 rounded-[1.25rem] liquid-glass-icon ${sys.bgClass} shadow-lg`}>
+                  <div className={`w-14 h-14 rounded-lg liquid-glass-icon ${sys.bgClass} shadow-lg`}>
                     <div className="w-[38px] h-[38px] rounded-full inner-glass-symbol flex items-center justify-center">
                       {sys.icon}
                     </div>
                   </div>
-                  <span className="font-mono text-[10px] px-2.5 py-1 rounded-full glass-1 border border-[var(--glass-border)] text-[var(--text-muted)] font-semibold">
+                  <span className="font-mono text-[10px] px-2.5 py-1 rounded-md glass-1 border border-[var(--glass-border)] text-[var(--text-muted)] font-semibold">
                     {sys.code}
                   </span>
                 </div>
@@ -430,7 +473,7 @@ function StudentDashboard() {
       </div>
 
       {/* ── Campus Status Strip ── */}
-      <div className="glass-card rounded-full px-6 py-3.5 flex flex-col sm:flex-row items-center gap-3 justify-between border border-[var(--glass-border)] shadow-xs">
+      <div className="glass-card rounded-xl px-6 py-3.5 flex flex-col sm:flex-row items-center gap-3 justify-between border border-[var(--glass-border)] shadow-xs">
         <div className="flex items-center gap-3">
           <div
             className="w-2.5 h-2.5 rounded-full shrink-0"
@@ -455,31 +498,44 @@ function StudentDashboard() {
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+// STAFF DASHBOARD  (authenticated staff + admin fallback)
+// ─────────────────────────────────────────────────────────────
 function StaffDashboard() {
-  const { navigateTo, announcements, removeAnnouncement } = useContext(AppContext);
-  const date = new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const { navigateTo, announcements, removeAnnouncement, authUser } = useContext(AppContext);
+
+  const date = new Date().toLocaleDateString('en-US', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  });
 
   const [time, setTime] = useState(new Date());
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-  const timeString = time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: false });
 
-  const currentSlot = getCurrentStaffSlot(STAFF_USER);
-  const nextSlot    = getNextStaffSlot(STAFF_USER);
-  const displaySlot = currentSlot || nextSlot;
-  const nextRoom    = displaySlot ? getRoomById(displaySlot.roomId) : null;
-  const todaySchedule = getStaffScheduleForToday(STAFF_USER);
-  
-  // Calculate time remaining for next slot
+  // Resolve faculty identity from authUser
+  const staffName        = authUser?.name        || 'Dr. Priya Sharma';
+  const staffDesignation = authUser?.designation || 'Professor';
+  const staffDepartment  = authUser?.department  || 'Computer Science Engineering';
+  const staffLabel       = `${staffDesignation} · ${staffDepartment}`;
+
+  // Resolve the faculty ID — use the one stored in authUser or fall back to a known demo ID
+  const facultyId = authUser?.facultyId || 'fac_002';
+
+  const currentSlot   = getCurrentStaffSlot(facultyId);
+  const nextSlot      = getNextStaffSlot(facultyId);
+  const displaySlot   = currentSlot || nextSlot;
+  const nextRoom      = displaySlot ? getRoomById(displaySlot.roomId) : null;
+  const todaySchedule = getStaffScheduleForToday(facultyId);
+
+  // Time remaining until a target time string (HH:MM)
   const getTimeRemaining = (targetTimeStr) => {
     if (!targetTimeStr) return '';
     const now = new Date();
     const [hours, minutes] = targetTimeStr.split(':').map(Number);
     const targetDate = new Date();
     targetDate.setHours(hours, minutes, 0, 0);
-    
     const diffMs = targetDate - now;
     if (diffMs <= 0) return 'Started';
     const diffMins = Math.floor(diffMs / 60000);
@@ -491,21 +547,22 @@ function StaffDashboard() {
 
   const isLab = displaySlot?.subject?.toLowerCase().includes('lab');
 
-  // Hardcoded breaks for staff example
+  // Standard breaks
   const breaks = [
-    { type: 'Tea Break', start: '11:00', end: '11:15' },
-    { type: 'Lunch Break', start: '13:00', end: '14:00' }
+    { type: 'Tea Break',   start: '11:00', end: '11:15' },
+    { type: 'Lunch Break', start: '13:00', end: '14:00' },
   ];
-  
-  const nowHhmm = `${String(time.getHours()).padStart(2,'0')}:${String(time.getMinutes()).padStart(2,'0')}`;
-  const nextBreak = breaks.find(b => b.start > nowHhmm) || null;
+
+  const nowHhmm  = `${String(time.getHours()).padStart(2,'0')}:${String(time.getMinutes()).padStart(2,'0')}`;
+  const nextBreak = breaks.find((b) => b.start > nowHhmm) || null;
 
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 space-y-8 page-enter">
+
       {/* ── Admin announcement banner ── */}
       {announcements.length > 0 && (
         <div
-          className="glass-card p-4 md:p-5 flex flex-col gap-2 rounded-2xl"
+          className="glass-card p-4 md:p-5 flex flex-col gap-2 rounded-xl"
           style={{ background: 'rgba(239, 68, 68, 0.08)', borderColor: 'rgba(239, 68, 68, 0.25)' }}
         >
           {announcements.map((a) => (
@@ -518,7 +575,7 @@ function StaffDashboard() {
               </div>
               <button
                 onClick={() => removeAnnouncement(a.id)}
-                className="glass-btn glass-btn-ghost glass-btn-sm text-[10px] text-red-500 hover:text-red-600 rounded-full shrink-0"
+                className="glass-btn glass-btn-ghost glass-btn-sm text-[10px] text-red-500 hover:text-red-600 rounded-md shrink-0"
               >
                 Dismiss
               </button>
@@ -529,7 +586,7 @@ function StaffDashboard() {
 
       {/* ── Staff Hero / Welcome ── */}
       <div
-        className="rounded-3xl p-6 md:p-10 relative overflow-hidden"
+        className="rounded-xl p-6 md:p-10 relative overflow-hidden"
         style={{
           border: '1px solid var(--glass-border)',
           boxShadow: 'var(--shadow-sm), inset 0 1px 1px rgba(255,255,255,0.5)',
@@ -539,10 +596,10 @@ function StaffDashboard() {
       >
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
           <div className="max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-4 border border-[var(--glass-border)] transition-all duration-300 cursor-default" style={{ background: 'rgba(0,0,0,0.04)' }}>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md mb-4 border border-[var(--glass-border)] transition-all duration-300 cursor-default" style={{ background: 'rgba(0,0,0,0.04)' }}>
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="font-mono text-[10px] font-semibold tracking-wider uppercase text-[var(--text-muted)]">
-                {date} · ALTS CAMPUS
+                {date} · MERIDIAN CAMPUS
               </span>
             </div>
 
@@ -558,20 +615,23 @@ function StaffDashboard() {
             </div>
 
             <div className="mb-4">
-              <h1 className="liquid-text font-display font-black leading-none tracking-tighter" style={{ fontSize: 'clamp(3rem, 8vw, 5rem)', marginLeft: '-0.05em' }}>
-                Dr. Priya Sharma
+              <h1
+                className="liquid-text font-display font-black leading-none tracking-tighter"
+                style={{ fontSize: 'clamp(3rem, 8vw, 5rem)', marginLeft: '-0.05em' }}
+              >
+                {staffName}
               </h1>
             </div>
 
             <p className="mt-4 text-[var(--text-secondary)] font-mono text-sm uppercase tracking-widest leading-relaxed">
-              Professor · Computer Science Engineering
+              {staffLabel}
             </p>
           </div>
 
           <div className="flex flex-col gap-3 sm:items-end w-full sm:w-auto">
             <button
               onClick={() => navigateTo('timetable')}
-              className="glass-btn glass-btn-primary glass-btn-lg rounded-full shadow-lg flex items-center justify-center gap-2 w-full sm:w-auto"
+              className="glass-btn glass-btn-primary glass-btn-lg rounded-lg shadow-lg flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               <Clock size={18} />
               <span>My Timetable</span>
@@ -585,17 +645,17 @@ function StaffDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-30">
-        
+
         {/* Next Class / Lab Session Widget */}
         <div className="lg:col-span-2 relative z-40">
-          <div className="glass-card glass-2 rounded-3xl p-6 md:p-8 flex flex-col justify-between border border-[var(--glass-border-strong)] shadow-lg h-full">
+          <div className="glass-card glass-2 rounded-xl p-6 md:p-8 flex flex-col justify-between border border-[var(--glass-border-strong)] shadow-lg h-full">
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-display font-bold text-lg uppercase tracking-tight text-[var(--text-primary)] flex items-center gap-2">
                 <BookOpen size={20} className={isLab ? 'text-amber-500' : 'text-blue-500'} />
                 {currentSlot ? 'Ongoing Session' : nextSlot ? 'Next Session' : 'Schedule Finished'}
               </h2>
               {isLab && (
-                <span className="px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-full font-mono text-[10px] uppercase font-bold tracking-widest">
+                <span className="px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-md font-mono text-[10px] uppercase font-bold tracking-widest">
                   Lab Session
                 </span>
               )}
@@ -610,7 +670,7 @@ function StaffDashboard() {
                   <p className="text-[var(--text-secondary)] font-mono text-sm uppercase tracking-widest mb-4">
                     Class: {displaySlot.classId.replace('_', '-').toUpperCase()}
                   </p>
-                  
+
                   <div className="flex items-center gap-4 text-sm font-medium text-[var(--text-secondary)]">
                     <div className="flex items-center gap-1.5">
                       <Clock size={16} className="text-[var(--text-muted)]" />
@@ -625,14 +685,14 @@ function StaffDashboard() {
 
                 <div className="flex flex-col gap-3 w-full md:w-auto">
                   {!currentSlot && (
-                    <div className="text-center p-4 bg-black/5 dark:bg-white/5 rounded-2xl border border-[var(--glass-border)]">
+                    <div className="text-center p-4 bg-black/5 dark:bg-white/5 rounded-lg border border-[var(--glass-border)]">
                       <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-widest mb-1">Starts in</p>
                       <p className="font-mono text-2xl font-bold text-[var(--gold)]">{getTimeRemaining(displaySlot.startTime)}</p>
                     </div>
                   )}
                   <button
                     onClick={() => navigateTo('route')}
-                    className="glass-btn glass-btn-primary flex items-center justify-center gap-2 rounded-xl py-3 px-6"
+                    className="glass-btn glass-btn-primary flex items-center justify-center gap-2 rounded-lg py-3 px-6"
                   >
                     <Navigation size={16} />
                     <span>Route to Room</span>
@@ -649,9 +709,9 @@ function StaffDashboard() {
           </div>
         </div>
 
-        {/* Next Break Widget */}
+        {/* Side: Next Break + Today's Schedule */}
         <div className="flex flex-col gap-6">
-          <div className="glass-card rounded-3xl p-6 border border-[var(--glass-border)] shadow-sm">
+          <div className="glass-card rounded-xl p-6 border border-[var(--glass-border)] shadow-sm">
             <h2 className="font-display font-bold text-sm uppercase tracking-tight text-[var(--text-primary)] mb-4 flex items-center gap-2">
               <Clock size={16} className="text-emerald-500" />
               Next Break
@@ -664,7 +724,7 @@ function StaffDashboard() {
                 <p className="font-mono text-sm text-[var(--text-secondary)] mb-4">
                   {nextBreak.start} – {nextBreak.end}
                 </p>
-                <div className="text-xs font-mono px-3 py-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-lg inline-block">
+                <div className="text-xs font-mono px-3 py-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-md inline-block">
                   Starts in {getTimeRemaining(nextBreak.start)}
                 </div>
               </div>
@@ -673,16 +733,16 @@ function StaffDashboard() {
             )}
           </div>
 
-          <div className="glass-card rounded-3xl p-6 border border-[var(--glass-border)] shadow-sm flex-1">
+          <div className="glass-card rounded-xl p-6 border border-[var(--glass-border)] shadow-sm flex-1">
             <h2 className="font-display font-bold text-sm uppercase tracking-tight text-[var(--text-primary)] mb-4 flex items-center gap-2">
               <BookOpen size={16} className="text-purple-500" />
-              Today's Schedule
+              Today&apos;s Schedule
             </h2>
-            
+
             {todaySchedule.length > 0 ? (
               <div className="space-y-4">
-                {todaySchedule.map(slot => {
-                  const isPast = nowHhmm >= slot.endTime;
+                {todaySchedule.map((slot) => {
+                  const isPast    = nowHhmm >= slot.endTime;
                   const isCurrent = nowHhmm >= slot.startTime && nowHhmm < slot.endTime;
                   return (
                     <div key={slot.id} className={`flex gap-3 items-start ${isPast ? 'opacity-40' : ''}`}>

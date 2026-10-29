@@ -1,10 +1,19 @@
 import { useContext, useState, useRef, useEffect } from 'react';
 import { Search, Building2, ArrowRight } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
-import { BUILDINGS, ROOMS, FACULTY } from '../data';
+import { BUILDINGS, ROOMS, FACULTY, MAIN_BLOCK_ROOMS } from '../data';
 
 // Build searchable items from all data sources
 const SEARCH_ITEMS = [
+  ...MAIN_BLOCK_ROOMS.map((r) => ({
+    id: r.id,
+    title: r.name,
+    subtitle: `Main Block · Level ${r.floor} · ${r.category} · ${r.department}`,
+    tag: r.category.toUpperCase(),
+    type: 'main_block',
+    action: 'main_block',
+    roomId: r.id,
+  })),
   ...BUILDINGS.map((b) => ({
     id: b.id,
     title: b.label,
@@ -71,7 +80,9 @@ export default function CommandPalette() {
   }, [cursor]);
 
   const handleSelect = (item) => {
-    if (item.action === 'locate' || item.action === 'room' || item.action === 'faculty') {
+    if (item.action === 'main_block' || item.roomId) {
+      locateOnMap(item.roomId || item.id);
+    } else if (item.action === 'locate' || item.action === 'room' || item.action === 'faculty') {
       const bid = item.buildingId || item.id;
       locateOnMap(bid);
     }
@@ -109,18 +120,18 @@ export default function CommandPalette() {
       aria-label="Campus search"
     >
       <div
-        className="w-full max-w-lg mx-4 rounded-3xl glass-modal border border-[var(--glass-border-strong)] p-4 shadow-2xl overflow-hidden backdrop-blur-2xl"
+        className="w-full max-w-lg mx-4 rounded-xl glass-modal border border-[var(--glass-border-strong)] p-4 shadow-2xl overflow-hidden backdrop-blur-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Search input row — sleek curved pill */}
+        {/* Search input row */}
         <div
-          className="flex items-center rounded-full bg-[rgba(0,0,0,0.05)] dark:bg-[rgba(255,255,255,0.06)] border border-[var(--glass-border)] px-3.5 py-1.5 mb-3 shadow-inner"
+          className="flex items-center rounded-lg bg-[rgba(0,0,0,0.05)] dark:bg-[rgba(255,255,255,0.06)] border border-[var(--glass-border)] px-3.5 py-1.5 mb-3 shadow-inner"
           role="searchbox"
         >
           <div className="pl-1 shrink-0">
             <img
               src="/logo.png"
-              alt="ALTS"
+              alt="NaviGO"
               style={{ height: 22, width: 'auto', objectFit: 'contain' }}
             />
           </div>
@@ -133,13 +144,13 @@ export default function CommandPalette() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search campus — buildings, rooms, faculty..."
-            className="flex-1 px-3 py-2 text-xs bg-transparent outline-none placeholder:text-[var(--text-muted)] text-[var(--text-primary)] rounded-full"
+            className="flex-1 px-3 py-2 text-xs bg-transparent outline-none placeholder:text-[var(--text-muted)] text-[var(--text-primary)] rounded-lg"
             aria-autocomplete="list"
             aria-controls="cmd-results"
             aria-activedescendant={`cmd-item-${cursor}`}
           />
           <button
-            className="mr-1 font-mono text-[10px] px-2.5 py-1 rounded-full glass-btn glass-btn-ghost hover:scale-105 transition-all text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+            className="mr-1 font-mono text-[10px] px-2.5 py-1 rounded-md glass-btn glass-btn-ghost hover:scale-105 transition-all text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             onClick={() => setCmdOpen(false)}
             aria-label="Close palette"
           >
@@ -185,7 +196,7 @@ export default function CommandPalette() {
                   tabIndex={-1}
                   onClick={() => handleSelect(item)}
                   onMouseEnter={() => setCursor(idx)}
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-full cursor-pointer transition-all border ${
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg cursor-pointer transition-all border ${
                     isActive
                       ? 'bg-[var(--gold)]/15 border-[var(--gold)]/45 text-[var(--text-primary)] shadow-sm scale-[1.01]'
                       : 'border-transparent hover:bg-[var(--glass-2)] text-[var(--text-primary)]'
@@ -193,7 +204,7 @@ export default function CommandPalette() {
                 >
                   {/* Icon box */}
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border"
                     style={{
                       borderColor: isActive ? 'var(--gold)' : tagColor,
                       color: isActive ? 'var(--gold)' : tagColor,
@@ -213,7 +224,7 @@ export default function CommandPalette() {
 
                   {/* Tag */}
                   <span
-                    className="font-mono text-[9px] font-bold px-2.5 py-0.5 rounded-full border shrink-0"
+                    className="font-mono text-[9px] font-bold px-2.5 py-0.5 rounded-md border shrink-0"
                     style={{
                       color: isActive ? 'var(--gold)' : tagColor,
                       borderColor: isActive ? 'rgba(244, 180, 0, 0.40)' : tagColor,

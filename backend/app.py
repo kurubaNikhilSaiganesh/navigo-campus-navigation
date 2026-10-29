@@ -3,7 +3,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import json
 import os
+import firebase_admin
+from firebase_admin import credentials, firestore
 
+# Initialize Firebase Admin
+# TODO: Provide the path to your Firebase service account key JSON file
+cred_path = os.getenv('FIREBASE_CREDENTIALS_PATH', 'serviceAccountKey.json')
+if os.path.exists(cred_path):
+    cred = credentials.Certificate(cred_path)
+    firebase_admin.initialize_app(cred)
+    db = firestore.client()
+else:
+    print(f"Warning: Firebase credentials not found at {cred_path}. Firestore will not be available.")
+    db = None
 app = FastAPI(title="Campus Nav API")
 
 # Allow CORS for local React dev server

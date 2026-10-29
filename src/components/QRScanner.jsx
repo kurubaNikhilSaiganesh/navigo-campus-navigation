@@ -130,7 +130,7 @@ export default function QRScanner({ onResult, onClose }) {
           <div>
             <h2 className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>Scan QR Code</h2>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              Point your camera at an ALTS exam seating QR code
+              Point your camera at a campus exam seating QR code
             </p>
           </div>
           <button

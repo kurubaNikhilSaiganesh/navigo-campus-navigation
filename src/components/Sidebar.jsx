@@ -1,5 +1,5 @@
-import { useState, useContext } from 'react';
-import { PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
+import { useContext } from 'react';
+import { PanelLeftClose, PanelLeftOpen, X, LogOut, Key, RefreshCw } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 
 // ── Unique Futuristic High-Craft Icons ─────────────────────────────
@@ -14,13 +14,13 @@ const ICONS = {
       <circle cx="12" cy="12" r="1.5" fill="currentColor" />
     </svg>
   ),
-  // Find a Route: Vector Waypoint Trajectory with Radar Sweep
+  // Main Block: Architectural Multi-Level Floor Plan
   route: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px] shrink-0">
-      <circle cx="5" cy="19" r="2.5" />
-      <circle cx="19" cy="5" r="2.5" />
-      <path d="M7.5 19H12a6 6 0 0 0 6-6V7.5" />
-      <path d="M14.5 9.5L18 6l3.5 3.5" />
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M3 9h18" />
+      <path d="M9 21V9" />
+      <path d="M15 21V9" />
     </svg>
   ),
   // Campus Directory: Architectural Spatial Blueprint Grid
@@ -67,12 +67,20 @@ const ICONS = {
       <path d="M8 7h8M8 11h5" />
     </svg>
   ),
+  // Profile: Biometric personal user badge
+  profile: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px] shrink-0">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  ),
   // Faculty: Biometric Leadership Crest with Geometric Shield
   faculty: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px] shrink-0">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M6 21v-2a6 6 0 0 1 12 0v2" />
-      <path d="M3 10a9 9 0 0 0 3 6M21 10a9 9 0 0 1-3 6" />
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   ),
   // Rooms: Isometric 3D Architectural Smart Chamber
@@ -120,32 +128,33 @@ const ICONS = {
   ),
 };
 
-// ── Navigation items (grouped) ───────────────────────────────────
+// ── Navigation items (strictly grouped per role requirements) ─────
 
 const getNavGroups = (role) => {
-  if (role === 'staff') {
+  if (role === 'staff' || role === 'faculty') {
     return [
       {
         label: 'Campus',
         items: [
           { id: 'today', label: 'Home', icon: ICONS.today },
-          { id: 'route', label: 'Find a Route', icon: ICONS.route },
+          { id: 'route', label: 'Main Block', icon: ICONS.route },
           { id: 'directory', label: 'Campus Directory', icon: ICONS.directory },
           { id: 'notices', label: 'Notices', icon: ICONS.notices },
         ],
       },
       {
-        label: 'My Work',
+        label: 'Academic Duties',
         items: [
           { id: 'timetable', label: 'My Timetable', icon: ICONS.timetable },
-          { id: 'classes', label: 'Next Class', icon: ICONS.classes },
+          { id: 'classes', label: 'Classes', icon: ICONS.classes },
           { id: 'rooms', label: 'Assigned Rooms', icon: ICONS.rooms },
         ],
       },
       {
-        label: 'Account',
+        label: 'Faculty & Account',
         items: [
-          { id: 'faculty', label: 'My Profile', icon: ICONS.faculty },
+          { id: 'faculty', label: 'Faculty Directory', icon: ICONS.faculty },
+          { id: 'profile', label: 'My Profile', icon: ICONS.profile },
         ],
       },
     ];
@@ -156,8 +165,8 @@ const getNavGroups = (role) => {
       {
         label: 'Campus',
         items: [
-          { id: 'today', label: 'Home', icon: ICONS.today },
-          { id: 'route', label: 'Find a Route', icon: ICONS.route },
+          { id: 'today', label: 'Dashboard', icon: ICONS.today },
+          { id: 'route', label: 'Main Block', icon: ICONS.route },
           { id: 'directory', label: 'Campus Directory', icon: ICONS.directory },
           { id: 'events', label: 'Events', icon: ICONS.events },
           { id: 'notices', label: 'Notices', icon: ICONS.notices },
@@ -173,41 +182,40 @@ const getNavGroups = (role) => {
         ],
       },
       {
-        label: 'Examinations (Admin)',
+        label: 'Examinations',
         items: [
-          { id: 'exams', label: 'Manage Exams', icon: ICONS.exams },
-          { id: 'seating', label: 'Manage Seating', icon: ICONS.seating },
+          { id: 'exams', label: 'Exam Schedule', icon: ICONS.exams },
+          { id: 'seating', label: 'Exam Seating', icon: ICONS.seating },
+        ],
+      },
+      {
+        label: 'Administration',
+        items: [
+          { id: 'admin', label: 'Admin Settings', icon: ICONS.admin },
         ],
       },
     ];
   }
 
-  // default: student
+  // default: public visitor
   return [
     {
-      label: 'Campus',
+      label: 'Explore',
       items: [
         { id: 'today', label: 'Home', icon: ICONS.today },
-        { id: 'route', label: 'Find a Route', icon: ICONS.route },
+        { id: 'route', label: 'Main Block', icon: ICONS.route },
         { id: 'directory', label: 'Campus Directory', icon: ICONS.directory },
         { id: 'events', label: 'Events', icon: ICONS.events },
         { id: 'notices', label: 'Notices', icon: ICONS.notices },
       ],
     },
     {
-      label: 'Academic',
+      label: 'Campus Info',
       items: [
         { id: 'timetable', label: 'Timetable', icon: ICONS.timetable },
         { id: 'classes', label: 'Classes', icon: ICONS.classes },
-        { id: 'faculty', label: 'Faculty', icon: ICONS.faculty },
+        { id: 'faculty', label: 'Faculty Directory', icon: ICONS.faculty },
         { id: 'rooms', label: 'Rooms', icon: ICONS.rooms },
-      ],
-    },
-    {
-      label: 'Examinations',
-      items: [
-        { id: 'exams', label: 'Exam Schedule', icon: ICONS.exams },
-        { id: 'seating', label: 'Exam Seating', icon: ICONS.seating },
       ],
     },
   ];
@@ -222,27 +230,44 @@ function SidebarContent({
   onClose,
   onCollapse,
   role,
-  setRole,
 }) {
+  const {
+    loginDemo,
+    logoutDemo,
+    setLoginModalOpen,
+    authUser,
+  } = useContext(AppContext);
+
+  const displayName = authUser?.name || (role === 'staff' || role === 'faculty' ? 'Dr. Priya Sharma' : role === 'admin' ? 'Administrator' : 'Campus Visitor');
+  const displayRole = authUser ? (authUser.role === 'staff' ? 'Faculty / Staff' : 'System Admin') : (role === 'staff' || role === 'faculty' ? 'Faculty · CSE' : role === 'admin' ? 'System Administrator' : 'Public Access');
+  const userInitials = authUser?.initials || (role === 'staff' || role === 'faculty' ? 'PS' : role === 'admin' ? 'AD' : 'CV');
+
   return (
     <div className="flex flex-col h-full select-none">
       {/* Header — Logo + Hide / Close Controls */}
       <div className="px-5 pt-5 pb-4 flex items-center justify-between border-b border-[var(--sidebar-border)]">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 shrink-0 liquid-glass-icon shadow-lg" style={{ background: 'linear-gradient(135deg, #007AFF 0%, #34C759 100%)' }}>
+        <button
+          onClick={() => {
+            setActiveView('today');
+            if (isMobile && onClose) onClose();
+          }}
+          className="flex items-center gap-3 text-left group transition-transform hover:scale-102 focus:outline-none"
+          aria-label="Go to Meridian Campus Guide Homepage"
+        >
+          <div className="w-9 h-9 shrink-0 liquid-glass-icon shadow-lg group-hover:shadow-xl transition-all" style={{ background: 'linear-gradient(135deg, #007AFF 0%, #34C759 100%)' }}>
             <div className="w-[26px] h-[26px] rounded-full inner-glass-symbol flex items-center justify-center">
               <span className="font-display font-black text-white text-[15px] drop-shadow-md">N</span>
             </div>
           </div>
           <div>
-            <p className="font-display font-black text-[var(--sidebar-text-active)] text-sm leading-none tracking-tight">
+            <p className="font-mono text-[9px] font-bold leading-tight text-[var(--sidebar-text)] tracking-widest uppercase group-hover:text-[var(--gold)] transition-colors">
               NaviGO
             </p>
-            <p className="font-mono text-[8.5px] font-semibold leading-tight mt-0.5 text-[var(--sidebar-text)] tracking-wider">
-              CAMPUS PLATFORM
+            <p className="font-mono text-[8px] font-semibold leading-tight text-[var(--sidebar-text)] tracking-wider opacity-60">
+              CAMPUS GUIDE
             </p>
           </div>
-        </div>
+        </button>
 
         {/* Hide control panel button (Desktop collapse / Mobile close) */}
         <div className="flex items-center gap-1">
@@ -267,45 +292,6 @@ function SidebarContent({
               <span className="text-[11px] font-bold tracking-wide">Hide</span>
             </button>
           )}
-        </div>
-      </div>
-
-      {/* Role toggle with smooth animated slider */}
-      <div className="px-4 pt-3.5 pb-2">
-        <div
-          className="relative flex p-1 rounded-full border border-black/10 dark:border-white/10"
-          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(20px)' }}
-        >
-          {/* Moving liquid thumb */}
-          <div
-            className="absolute top-1 bottom-1 w-[calc(33.33%-4px)] rounded-full transition-transform duration-300"
-            style={{
-              left: 4,
-              transform: role === 'staff' ? 'translateX(100%)' : role === 'admin' ? 'translateX(200%)' : 'translateX(0)',
-              background: 'rgba(255, 255, 255, 0.15)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-            }}
-          />
-
-          {['student', 'staff', 'admin'].map((r) => {
-            const isCurrent = role === r;
-            return (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setRole(r)}
-                className="relative z-10 flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-full transition-colors duration-200 text-center"
-                style={{
-                  color: isCurrent ? 'var(--gold)' : 'rgba(255,255,255,0.7)',
-                  textShadow: isCurrent ? '0 0 12px var(--shadow-gold)' : 'none',
-                  fontWeight: 700,
-                }}
-              >
-                {r}
-              </button>
-            );
-          })}
         </div>
       </div>
 
@@ -338,7 +324,7 @@ function SidebarContent({
                       setActiveView(item.id);
                       if (isMobile && onClose) onClose();
                     }}
-                    className={`w-full group flex items-center gap-3 px-3.5 py-2.5 rounded-full transition-all duration-200 text-left relative ${
+                    className={`w-full group flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-all duration-200 text-left relative ${
                       isActive
                         ? 'bg-[var(--gold)]/15 dark:bg-[var(--gold)]/20 border border-[var(--gold)]/35 text-[var(--sidebar-text-active)] font-bold shadow-xs'
                         : 'border border-transparent text-[var(--sidebar-text)] hover:text-[var(--sidebar-text-active)] hover:bg-black/5 dark:hover:bg-white/5 font-medium'
@@ -367,68 +353,73 @@ function SidebarContent({
             </div>
           </div>
         ))}
-
-        {role === 'admin' && (
-          <div>
-            <p className="nav-section-label select-none">Administration</p>
-            <div className="space-y-1">
-              {(() => {
-                const isAdminActive = activeView === 'admin';
-
-                return (
-                  <button
-                    data-id="admin"
-                    onClick={() => {
-                      setActiveView('admin');
-                      if (isMobile && onClose) onClose();
-                    }}
-                    className={`w-full group flex items-center gap-3 px-3.5 py-2.5 rounded-full transition-all duration-200 text-left relative ${
-                      isAdminActive
-                        ? 'bg-[var(--gold)]/15 dark:bg-[var(--gold)]/20 border border-[var(--gold)]/35 text-[var(--sidebar-text-active)] font-bold shadow-xs'
-                        : 'border border-transparent text-[var(--sidebar-text)] hover:text-[var(--sidebar-text-active)] hover:bg-black/5 dark:hover:bg-white/5 font-medium'
-                    }`}
-                    aria-current={isAdminActive ? 'page' : undefined}
-                  >
-                    <span
-                      className="nav-icon transition-transform duration-200 group-hover:scale-110 shrink-0"
-                      style={{
-                        color: isAdminActive ? 'var(--gold)' : 'currentColor',
-                        filter: isAdminActive ? 'drop-shadow(0 0 6px var(--gold))' : 'none',
-                      }}
-                    >
-                      {ICONS.admin}
-                    </span>
-                    <span className="text-[13px] tracking-tight">Admin Settings</span>
-                    <span
-                      className="ml-auto font-mono text-[8px] px-2 py-0.5 font-bold tracking-wide rounded-full shadow-sm"
-                      style={{ background: 'var(--gold)', color: '#ffffff' }}
-                    >
-                      ADMIN
-                    </span>
-                  </button>
-                );
-              })()}
-            </div>
-          </div>
-        )}
       </nav>
 
-      {/* User profile pill */}
+      {/* User profile pill with live authentication display & demo triggers */}
       <div className="px-4 py-3.5 border-t border-[var(--sidebar-border)]">
-        <div className="flex items-center gap-3 p-1.5 rounded-full bg-[rgba(255,255,255,0.03)] dark:bg-[rgba(255,255,255,0.04)] border border-[var(--sidebar-border)]">
-          <div
-            className="w-8 h-8 flex items-center justify-center text-[11px] font-bold font-mono shrink-0 rounded-full shadow-sm"
-            style={{ background: 'var(--gold)', color: '#ffffff' }}
+        <div className="flex items-center justify-between p-1.5 rounded-xl bg-[rgba(255,255,255,0.03)] dark:bg-[rgba(255,255,255,0.04)] border border-[var(--sidebar-border)]">
+          <button
+            onClick={() => {
+              if (authUser) {
+                setActiveView('profile');
+              } else {
+                setLoginModalOpen(true);
+              }
+              if (isMobile && onClose) onClose();
+            }}
+            className="flex items-center gap-2.5 min-w-0 flex-1 text-left hover:opacity-85 transition-opacity"
+            title={authUser ? 'Open My Profile' : 'Sign in to Portal'}
           >
-            AK
-          </div>
-          <div className="overflow-hidden min-w-0 pr-2">
-            <p className="text-[12.5px] font-semibold text-[var(--sidebar-text-active)] truncate leading-tight">
-              {role === 'staff' ? 'Dr. Priya Sharma' : role === 'admin' ? 'System Admin' : 'Aarav Kannan'}
-            </p>
-            <p className="font-mono text-[8.5px] truncate uppercase tracking-wider text-[var(--sidebar-text)]">
-              {role === 'staff' ? 'Professor · CSE' : role === 'admin' ? 'ALTS IT Dept' : 'BCA · Year 2'}
-            </p>
+            <div
+              className="w-8 h-8 flex items-center justify-center text-[11px] font-bold font-mono shrink-0 rounded-full shadow-sm"
+              style={{
+                background: (authUser?.role === 'staff' || role === 'staff' || role === 'faculty')
+                  ? 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)'
+                  : (authUser?.role === 'admin' || role === 'admin')
+                    ? 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)'
+                    : 'var(--gold)',
+                color: '#ffffff',
+              }}
+            >
+              {userInitials}
+            </div>
+            <div className="overflow-hidden min-w-0 pr-1">
+              <p className="text-[12px] font-semibold text-[var(--sidebar-text-active)] truncate leading-tight">
+                {displayName}
+              </p>
+              <p className="font-mono text-[8.5px] truncate uppercase tracking-wider text-[var(--sidebar-text)]">
+                {displayRole}
+              </p>
+            </div>
+          </button>
+
+          {/* Role cycle switch — compact icon-only button */}
+          <div className="shrink-0 pl-1">
+            <button
+              onClick={() => {
+                if (!authUser) {
+                  loginDemo('faculty@meridian.demo', 'faculty123');
+                } else if (authUser.role === 'staff') {
+                  loginDemo('admin@meridian.demo', 'admin123');
+                } else {
+                  logoutDemo();
+                }
+              }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
+              style={{
+                background: !authUser
+                  ? 'rgba(0,122,255,0.12)'
+                  : authUser.role === 'admin'
+                    ? 'rgba(239,68,68,0.15)'
+                    : 'rgba(139,92,246,0.15)',
+                border: `1.5px solid ${!authUser ? 'rgba(0,122,255,0.35)' : authUser.role === 'admin' ? 'rgba(239,68,68,0.4)' : 'rgba(139,92,246,0.4)'}`,
+                color: !authUser ? 'var(--gold)' : authUser.role === 'admin' ? '#EF4444' : '#8B5CF6',
+              }}
+              title={!authUser ? 'Switch to Faculty Demo' : authUser.role === 'staff' ? 'Switch to Admin Demo' : 'Sign Out to Visitor Mode'}
+              aria-label="Switch account role"
+            >
+              <RefreshCw size={14} strokeWidth={2.5} />
+            </button>
           </div>
         </div>
       </div>
@@ -446,7 +437,7 @@ export default function Sidebar({
   collapsed = false,
   setCollapsed = () => {},
 }) {
-  const { userRole: role, setUserRole: setRole } = useContext(AppContext);
+  const { userRole: role } = useContext(AppContext);
 
   return (
     <>
@@ -473,7 +464,6 @@ export default function Sidebar({
             onClose={() => setMobileMenuOpen(false)}
             onCollapse={null}
             role={role}
-            setRole={setRole}
           />
         </aside>
       )}
@@ -491,7 +481,6 @@ export default function Sidebar({
             onClose={null}
             onCollapse={() => setCollapsed(true)}
             role={role}
-            setRole={setRole}
           />
         </aside>
       )}
@@ -501,12 +490,12 @@ export default function Sidebar({
         <div className="hidden lg:block my-3 ml-3 shrink-0 z-30 select-none">
           <button
             onClick={() => setCollapsed(false)}
-            className="flex items-center gap-2.5 px-4 py-2.5 rounded-full curved-control-panel hover:scale-105 transition-all text-xs font-bold text-[var(--sidebar-text-active)] hover:text-[var(--gold)] shadow-xl cursor-pointer group"
+            className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl curved-control-panel hover:scale-105 transition-all text-xs font-bold text-[var(--sidebar-text-active)] hover:text-[var(--gold)] shadow-xl cursor-pointer group"
             title="Open control panel"
             aria-label="Open control panel"
           >
             <PanelLeftOpen size={16} className="text-[var(--gold)] group-hover:scale-110 transition-transform" />
-            <span className="font-display font-black text-sm tracking-tight">ALTS</span>
+            <span className="font-display font-black text-sm tracking-tight">NaviGO</span>
             <span className="font-mono text-[9px] text-[var(--sidebar-text)] font-semibold tracking-wider uppercase">Menu</span>
           </button>
         </div>

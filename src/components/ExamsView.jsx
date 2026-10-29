@@ -1,10 +1,10 @@
-// ExamsView — MID and SEM exam schedules
-
+// ExamsView — MID and SEM exam schedules with responsive layout
 import { useState, useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import { EXAMS, getDaysUntilExam, SESSIONS } from '../data/exams';
 import { GlassTabs } from './ui/GlassTabs';
 import { GlassBadge } from './ui/GlassBadge';
+import { MapPin, ChevronDown } from 'lucide-react';
 
 const TABS = [
   { id: 'all',  label: 'All Exams' },
@@ -16,14 +16,14 @@ function SessionBadge({ session }) {
   const s = SESSIONS[session];
   return (
     <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase"
+      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase shrink-0"
       style={{
-        background: session === 'FN' ? 'rgba(59, 130, 246, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+        background: session === 'FN' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(245, 158, 11, 0.15)',
         color: session === 'FN' ? 'var(--blue)' : '#D97706',
-        border: `1px solid ${session === 'FN' ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)'}`,
+        border: `1px solid ${session === 'FN' ? 'rgba(59,130,246,0.3)' : 'rgba(245,158,11,0.3)'}`,
       }}
     >
-      {session} · {s?.label}
+      {session} · {s?.label || session}
     </span>
   );
 }
@@ -31,35 +31,34 @@ function SessionBadge({ session }) {
 function ExamScheduleRow({ item }) {
   return (
     <div
-      className="flex flex-col sm:flex-row sm:items-center gap-2 py-3 px-4 rounded-md transition-colors"
-      style={{ borderBottom: '1px solid var(--glass-border)' }}
+      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-3.5 px-4 transition-colors border-b border-[var(--glass-border)] last:border-b-0"
     >
-      <div className="flex items-center gap-3 flex-1 min-w-0">
+      <div className="flex items-center gap-3.5 flex-1 min-w-0">
         <div
-          className="text-center shrink-0 w-12 h-12 flex flex-col items-center justify-center rounded-lg"
-          style={{ background: 'rgba(245, 158, 11, 0.12)' }}
+          className="text-center shrink-0 w-12 h-12 flex flex-col items-center justify-center rounded-lg shadow-xs"
+          style={{ background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.25)' }}
         >
-          <p className="font-mono font-bold text-base leading-none" style={{ color: '#D97706' }}>
+          <p className="font-mono font-black text-base leading-none text-amber-500">
             {new Date(item.date).getDate()}
           </p>
-          <p className="font-mono text-[8px] uppercase tracking-wide" style={{ color: '#D97706' }}>
+          <p className="font-mono text-[8px] uppercase tracking-wider font-bold text-amber-500 mt-0.5">
             {new Date(item.date).toLocaleDateString('en-US', { month: 'short' })}
           </p>
         </div>
         <div className="min-w-0">
-          <p className="font-semibold text-sm leading-tight truncate" style={{ color: 'var(--text-primary)' }}>
+          <p className="font-bold text-sm leading-snug text-[var(--text-primary)] truncate">
             {item.subjectName}
           </p>
-          <p className="font-mono text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+          <p className="font-mono text-[10.5px] mt-0.5 text-[var(--text-muted)] truncate">
             {item.subjectCode} · {item.branch} {item.section && `· Sec ${item.section}`}
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-2 flex-wrap">
+
+      <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
         <SessionBadge session={item.session} />
         <span
-          className="text-xs px-2 py-0.5 rounded font-mono"
-          style={{ background: 'var(--glass-1)', color: 'var(--text-secondary)', border: '1px solid var(--glass-border)' }}
+          className="text-xs px-2.5 py-1 rounded-md font-mono font-bold glass-1 border border-[var(--glass-border)] text-[var(--text-secondary)]"
         >
           {item.examHall}
         </span>
@@ -76,108 +75,98 @@ function ExamCard({ exam, onFindSeat }) {
 
   return (
     <div
-      className="rounded-2xl overflow-hidden transition-all duration-300"
+      className="rounded-xl overflow-hidden transition-all duration-300 glass-card border shadow-lg"
       style={{
-        background: 'var(--glass-1)',
-        backdropFilter: 'var(--blur-md)',
-        WebkitBackdropFilter: 'var(--blur-md)',
-        border: isOngoing ? '1px solid rgba(8, 127, 69, 0.3)' : '1px solid var(--glass-border)',
-        boxShadow: 'var(--shadow-sm)',
-        isolation: 'isolate',
-        WebkitBackfaceVisibility: 'hidden',
-        backfaceVisibility: 'hidden',
-        transform: 'translateZ(0)',
+        border: isOngoing ? '1px solid rgba(8, 127, 69, 0.4)' : '1px solid var(--glass-border)',
       }}
     >
-      {/* Exam header */}
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
+      {/* Exam Header */}
+      <div className="p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-2">
               <GlassBadge variant="gold">{exam.type}</GlassBadge>
               <GlassBadge variant={isOngoing ? 'green' : isUpcoming ? 'gold' : 'gray'}>
-                {isOngoing ? 'Ongoing' : isUpcoming ? `In ${daysUntil}d` : 'Completed'}
+                {isOngoing ? 'Ongoing Exam' : isUpcoming ? `In ${daysUntil}d` : 'Completed'}
               </GlassBadge>
             </div>
             <h3
-              className="font-display font-bold text-lg md:text-xl leading-tight"
-              style={{ color: 'var(--text-primary)' }}
+              className="font-display font-bold text-xl sm:text-2xl leading-tight text-[var(--text-primary)]"
             >
               {exam.name}
             </h3>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs sm:text-sm mt-1 text-[var(--text-muted)] font-mono">
               {exam.startDate} — {exam.endDate} · Semester {exam.semester}
             </p>
           </div>
 
-          {/* Countdown */}
+          {/* Countdown badge */}
           {isUpcoming && (
             <div
-              className="text-center px-4 py-2 rounded-lg shrink-0"
+              className="text-center px-4 py-2.5 rounded-lg shrink-0 self-start sm:self-auto"
               style={{ background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.25)' }}
             >
-              <p className="font-display font-black text-2xl leading-none" style={{ color: '#D97706' }}>
+              <p className="font-display font-black text-2xl sm:text-3xl leading-none text-amber-500">
                 {daysUntil}
               </p>
-              <p className="font-mono text-[8px] uppercase tracking-wider mt-0.5" style={{ color: '#D97706' }}>
-                days
+              <p className="font-mono text-[9px] uppercase tracking-wider font-bold text-amber-500 mt-0.5">
+                days left
               </p>
             </div>
           )}
         </div>
 
-        <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-xs sm:text-sm leading-relaxed mb-4 text-[var(--text-secondary)]">
           {exam.description}
         </p>
 
-        {/* Branches */}
-        <div className="flex flex-wrap gap-1.5 mb-4">
+        {/* Participating Branches */}
+        <div className="flex flex-wrap gap-1.5 mb-5">
           {exam.branches.map((b) => (
             <span
               key={b}
-              className="font-mono text-[10px] px-2 py-0.5 rounded uppercase"
-              style={{ background: 'var(--glass-1)', color: 'var(--text-muted)', border: '1px solid var(--glass-border)' }}
+              className="font-mono text-[10px] px-2.5 py-1 rounded-md glass-1 border border-[var(--glass-border)] text-[var(--text-muted)] uppercase font-semibold"
             >
               {b}
             </span>
           ))}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2">
+        {/* Action Controls */}
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={onFindSeat}
-            className="glass-btn glass-btn-primary glass-btn-sm rounded-full flex items-center gap-1.5"
+            className="glass-btn glass-btn-primary rounded-lg px-5 py-2 text-xs font-bold shadow-md flex items-center gap-2 hover:scale-105 transition-all"
+            id={`find-seat-${exam.id}`}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-            </svg>
-            Find My Seat
+            <MapPin size={14} />
+            <span>Find My Seat</span>
           </button>
           <button
             onClick={() => setExpanded(!expanded)}
-            className="glass-btn glass-btn-ghost glass-btn-sm"
+            className="glass-btn glass-btn-ghost rounded-lg px-4 py-2 text-xs font-semibold flex items-center gap-1.5"
           >
-            {expanded ? 'Hide' : 'View'} Schedule
-            <svg
-              width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-              style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 200ms ease' }}
-            >
-              <path d="M6 9l6 6 6-6"/>
-            </svg>
+            <span>{expanded ? 'Hide' : 'View'} Schedule</span>
+            <ChevronDown
+              size={14}
+              className={`transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+            />
           </button>
         </div>
       </div>
 
-      {/* Expandable schedule */}
+      {/* Expandable schedule list */}
       {expanded && (
-        <div style={{ borderTop: '1px solid var(--glass-border)' }}>
-          <div className="px-4 py-2">
-            <p className="font-mono text-[9px] uppercase tracking-widest mb-0" style={{ color: 'var(--text-muted)' }}>
-              Detailed Schedule
-            </p>
+        <div className="border-t border-[var(--glass-border)] bg-[var(--glass-2)]">
+          <div className="px-5 py-2.5 border-b border-[var(--glass-border)] flex items-center justify-between">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-bold">
+              Examination Paper Timetable ({exam.schedule.length} Papers)
+            </span>
+            <span className="font-mono text-[9px] text-[var(--text-subtle)]">
+              Authorized Schedule
+            </span>
           </div>
-          <div>
+          <div className="divide-y divide-[var(--glass-border)]">
             {exam.schedule.map((item, idx) => (
               <ExamScheduleRow key={idx} item={item} />
             ))}
@@ -197,22 +186,23 @@ export default function ExamsView() {
     : EXAMS.filter((e) => e.type === activeTab);
 
   return (
-    <div className="px-3 sm:px-4 md:px-8 py-6 sm:py-8 max-w-4xl mx-auto page-enter w-full">
-      {/* Header */}
-      <div className="mb-8">
-        <p className="font-mono text-[10px] uppercase tracking-widest mb-2" style={{ color: 'var(--gold)' }}>
-          [EXAM_SYS]
+    <div className="px-4 md:px-8 pt-4 pb-12 max-w-4xl mx-auto page-enter w-full space-y-6">
+      {/* Header with safe top spacing */}
+      <div>
+        <p className="font-mono text-[10px] uppercase tracking-widest mb-1.5 font-bold text-[var(--gold)]">
+          [EXAMINATION_SERVICES · VERIFIED CONTROLLER]
         </p>
-        <h1 className="font-display text-4xl md:text-5xl font-black uppercase tracking-tight mb-2" style={{ color: 'var(--text-primary)' }}>
+        <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight text-[var(--text-primary)]">
           Examinations.
         </h1>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-[var(--text-secondary)] text-sm mt-1">
           {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          <span className="font-mono ml-2 text-xs text-amber-500 font-bold">· Fall 2026 Assessment Series</span>
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="mb-6">
+      <div>
         <GlassTabs
           tabs={TABS.map((t) => ({
             ...t,
@@ -223,45 +213,46 @@ export default function ExamsView() {
         />
       </div>
 
-      {/* Quick seating shortcut */}
+      {/* Quick Seating Shortcut Banner */}
       <div
-        className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 rounded-2xl backdrop-blur-md"
-        style={{ 
-          background: 'rgba(245, 158, 11, 0.08)', 
-          border: '1px solid rgba(245, 158, 11, 0.2)', 
-          boxShadow: 'none',
-          isolation: 'isolate',
-          WebkitBackfaceVisibility: 'hidden',
-          backfaceVisibility: 'hidden',
-          transform: 'translateZ(0)',
+        className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border backdrop-blur-md shadow-md"
+        style={{
+          background: 'rgba(245, 158, 11, 0.08)',
+          borderColor: 'rgba(245, 158, 11, 0.25)',
         }}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center rounded-lg shrink-0" style={{ background: '#F59E0B' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-            </svg>
+        <div className="flex items-center gap-3.5">
+          <div
+            className="w-11 h-11 flex items-center justify-center rounded-lg shrink-0 shadow-md"
+            style={{ background: 'linear-gradient(135deg, var(--gold) 0%, #D97706 100%)' }}
+          >
+            <MapPin size={20} className="text-white" />
           </div>
           <div>
-            <p className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>Exam Seating Lookup</p>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Find your exam hall and seat number</p>
+            <p className="font-bold text-sm sm:text-base text-[var(--text-primary)]">
+              Exam Seating &amp; Hall Lookup
+            </p>
+            <p className="text-xs text-[var(--text-secondary)]">
+              Enter roll number or register number to pinpoint your allocated desk and hall
+            </p>
           </div>
         </div>
+
         <button
           onClick={() => navigateTo('seating')}
-          className="glass-btn glass-btn-sm rounded-full shrink-0 font-bold text-white w-full sm:w-auto"
-          style={{ background: '#F59E0B', boxShadow: '0 4px 14px rgba(245,158,11,0.3)' }}
+          className="glass-btn glass-btn-primary rounded-lg px-5 py-2.5 text-xs font-bold shadow-md shrink-0 w-full sm:w-auto text-center"
+          id="btn-goto-seating"
         >
-          Find My Seat
+          Open Seating Matrix
         </button>
       </div>
 
-      {/* Exam cards */}
-      <div className="space-y-6">
+      {/* Exam Cards List */}
+      <div className="space-y-5">
         {filtered.length === 0 ? (
-          <div className="glass-card p-10 text-center">
-            <p className="font-mono text-sm" style={{ color: 'var(--text-muted)' }}>
-              No {activeTab === 'all' ? '' : activeTab} exams scheduled yet.
+          <div className="glass-card p-12 text-center rounded-xl border border-dashed border-[var(--glass-border)]">
+            <p className="font-mono text-sm text-[var(--text-muted)]">
+              No {activeTab === 'all' ? '' : activeTab} exams scheduled at this time.
             </p>
           </div>
         ) : (
@@ -277,4 +268,3 @@ export default function ExamsView() {
     </div>
   );
 }
-

@@ -50,3 +50,14 @@ coverage/
 .parcel-cache/
 .turbo/
 storybook-static/
+
+# ── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# ── Nested duplicate folders ─────────────────────────────────
+mini-project/
+
+serviceAccountKey.json
