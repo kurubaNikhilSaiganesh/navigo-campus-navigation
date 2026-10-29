@@ -43,8 +43,24 @@ const VALID_VIEWS = [
 function getInitialView() {
   if (typeof window === 'undefined') return 'today';
   const hash = window.location.hash.replace('#', '').trim().toLowerCase();
-  if (!hash) return 'today';
-  return VALID_VIEWS.includes(hash) ? hash : 'not-found';
+  if (hash) {
+    if (hash === '404' || hash === 'not-found') return 'not-found';
+    return VALID_VIEWS.includes(hash) ? hash : 'not-found';
+  }
+
+  // Check pathname for direct or SPA redirected routes
+  const base = import.meta.env.BASE_URL || '/';
+  let path = window.location.pathname;
+  if (path.startsWith(base)) {
+    path = path.slice(base.length);
+  }
+  path = path.replace(/^\//, '').replace(/\/$/, '').trim().toLowerCase();
+  if (path && path !== 'index.html') {
+    if (path === '404' || path === 'not-found' || path === '404.html') return 'not-found';
+    return VALID_VIEWS.includes(path) ? path : 'not-found';
+  }
+
+  return 'today';
 }
 
 export default function App() {
@@ -217,6 +233,8 @@ export default function App() {
       const hash = window.location.hash.replace('#', '').trim().toLowerCase();
       if (!hash) {
         setActiveView('today');
+      } else if (hash === '404' || hash === 'not-found') {
+        setActiveView('not-found');
       } else if (VALID_VIEWS.includes(hash)) {
         setActiveView(hash);
       } else {
@@ -432,7 +450,7 @@ export default function App() {
               )}
 
               {activeView === 'not-found' && (
-                <NotFoundView onGoHome={() => navigateTo('today')} />
+                <NotFoundView onGoHome={() => navigateTo('today')} onNavigate={navigateTo} />
               )}
             </div>
 
@@ -584,10 +602,10 @@ function UnauthorizedView({ onSignIn, onGoHome }) {
   );
 }
 
-function NotFoundView({ onGoHome }) {
+function NotFoundView({ onGoHome, onNavigate }) {
   return (
-    <div className="flex flex-col items-center justify-center h-full min-h-[450px] text-center p-8 page-enter">
-      <div className="w-20 h-20 rounded-3xl glass-card flex items-center justify-center mb-5 border border-amber-500/30 bg-amber-500/10 text-amber-500 shadow-xl">
+    <div className="flex flex-col items-center justify-center h-full min-h-[480px] text-center p-8 page-enter">
+      <div className="w-20 h-20 rounded-2xl glass-card flex items-center justify-center mb-5 border border-amber-500/30 bg-amber-500/10 text-amber-500 shadow-xl">
         <AlertTriangle size={36} />
       </div>
       <span className="font-mono text-xs uppercase tracking-widest text-amber-500 font-bold mb-2">
@@ -596,16 +614,34 @@ function NotFoundView({ onGoHome }) {
       <h2 className="font-display font-black text-3xl md:text-4xl text-[var(--text-primary)] mb-3">
         Campus Waypoint Missing
       </h2>
-      <p className="text-[var(--text-secondary)] text-sm max-w-md mx-auto mb-6 leading-relaxed">
-        The section or route coordinate you requested does not exist in the Meridian Campus registry.
+      <p className="text-[var(--text-secondary)] font-mono text-xs max-w-md mx-auto mb-6 leading-relaxed">
+        The section, room, or route coordinate you requested was not found in the Meridian Campus registry.
       </p>
-      <button
-        onClick={onGoHome}
-        className="glass-btn glass-btn-primary rounded-full py-3 px-8 text-xs font-bold shadow-lg flex items-center gap-2"
-      >
-        <Home size={15} />
-        <span>Return to Campus Home</span>
-      </button>
+      <div className="flex items-center gap-3 flex-wrap justify-center">
+        <button
+          onClick={onGoHome}
+          className="glass-btn glass-btn-primary rounded-xl py-2.5 px-6 text-xs font-bold shadow-lg flex items-center gap-2"
+        >
+          <Home size={15} />
+          <span>Return to Campus Home</span>
+        </button>
+        {onNavigate && (
+          <>
+            <button
+              onClick={() => onNavigate('route')}
+              className="glass-btn rounded-xl py-2.5 px-5 text-xs font-semibold hover:bg-white/5 transition-colors"
+            >
+              <span>Main Block</span>
+            </button>
+            <button
+              onClick={() => onNavigate('directory')}
+              className="glass-btn rounded-xl py-2.5 px-5 text-xs font-semibold hover:bg-white/5 transition-colors"
+            >
+              <span>Campus Directory</span>
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -2,28 +2,90 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>NaviGO — Campus Navigation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 — NaviGO Campus Navigation</title>
     <script>
       // Single Page Application routing fix for GitHub Pages
-      // When GitHub Pages gets a 404 on a deep route, it serves this file.
-      // This script redirects the user back to index.html with the path preserved.
-      // Source: https://github.com/rafgraph/spa-github-pages
-
       var pathSegmentsToKeep = 1; // Number of path segments to keep (navigo-campus-navigation)
-
       var l = window.location;
+      var currentPath = l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/');
+      
       l.replace(
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
         l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') +
-        '/?/' + l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+        '/?/' + currentPath.replace(/&/g, '~and~') +
         (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
         l.hash
       );
     </script>
+    <style>
+      body {
+        margin: 0;
+        background: #0A0A0E;
+        color: #F3F4F6;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        text-align: center;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      .card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 40px 32px;
+        max-width: 440px;
+        width: 100%;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      }
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        background: rgba(245, 158, 11, 0.15);
+        color: #F59E0B;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 28px;
+        font-weight: 800;
+      }
+      p {
+        margin: 0 0 24px;
+        font-size: 14px;
+        color: #9CA3AF;
+        line-height: 1.5;
+      }
+      a {
+        display: inline-block;
+        padding: 12px 28px;
+        background: #007AFF;
+        color: #FFFFFF;
+        text-decoration: none;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 700;
+        transition: opacity 0.2s;
+      }
+      a:hover {
+        opacity: 0.9;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
-      <p>NaviGO requires JavaScript to run. Please enable JavaScript in your browser.</p>
-    </noscript>
+    <div class="card">
+      <div class="badge">404 · Destination Missing</div>
+      <h1>Waypoint Not Found</h1>
+      <p>The page or route coordinate you requested does not exist on this campus platform.</p>
+      <a href="/navigo-campus-navigation/">Return to Campus Guide</a>
+    </div>
   </body>
 </html>
