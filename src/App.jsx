@@ -192,18 +192,21 @@ export default function App() {
   const [timetableOverrides, setTimetableOverrides] = useState({});
   const [locationStatus, setLocationStatus] = useState({}); // { [buildingId]: 'closed' | 'active' }
 
-  // Safe offline fetch fallback
+  // Standalone offline data mode (fetches local backend only if run locally in dev mode)
   useEffect(() => {
+    if (typeof window === 'undefined' || window.location.hostname !== 'localhost') {
+      return;
+    }
     const controller = new AbortController();
-    fetch('https://localhost:8443/api/events', { signal: controller.signal })
+    fetch('http://localhost:5000/api/events', { signal: controller.signal })
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data && data.length) setEvents(data); })
-      .catch(() => { /* Safe fallback to local INITIAL_EVENTS without console noise */ });
+      .catch(() => { /* Safe fallback to local data */ });
 
-    fetch('https://localhost:8443/api/classes', { signal: controller.signal })
+    fetch('http://localhost:5000/api/classes', { signal: controller.signal })
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data && data.length) setClasses(data); })
-      .catch(() => { /* Safe fallback to local INITIAL_CLASSES */ });
+      .catch(() => { /* Safe fallback to local data */ });
 
     return () => controller.abort();
   }, []);

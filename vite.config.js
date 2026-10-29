@@ -1,17 +1,15 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// GitHub Pages deployment needs the repo name as base path
-// Set GITHUB_PAGES=true in the deploy workflow env
-const isGitHubPages = process.env.GITHUB_PAGES === 'true'
+// GitHub Pages deployment uses repo name as base path
+const isGitHubPages = process.env.GITHUB_PAGES === 'true' || process.env.NODE_ENV === 'production'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
 
-  // When deploying to GitHub Pages, set base to your repo name
-  // e.g. if your repo is github.com/yourname/mini-project → base: '/mini-project/'
-  base: isGitHubPages ? '/mini-project/' : '/',
+  // GitHub Pages base path
+  base: isGitHubPages ? '/navigo-campus-navigation/' : '/',
 
   server: {
     host: true,

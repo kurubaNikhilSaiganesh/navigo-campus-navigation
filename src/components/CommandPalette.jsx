@@ -130,7 +130,7 @@ export default function CommandPalette() {
         >
           <div className="pl-1 shrink-0">
             <img
-              src="/logo.png"
+              src={`${import.meta.env.BASE_URL}logo.png`}
               alt="NaviGO"
               style={{ height: 22, width: 'auto', objectFit: 'contain' }}
             />

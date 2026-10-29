@@ -2,17 +2,30 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="icon" type="image/png" href="./logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Meridian Campus Guide — Navigation &amp; Student Directory</title>
-    <meta name="description" content="Meridian Campus Guide: Interactive campus navigation, class schedules, room availability, and event bulletin for Meridian Campus." />
-    <meta name="keywords" content="Meridian campus guide, campus navigation, campus map, events, class schedules, room finder" />
+    <title>NaviGO — Meridian Campus Guide &amp; Interactive Navigation</title>
+    <meta name="description" content="NaviGO: Interactive campus navigation, class schedules, room availability, and event bulletin for Meridian Campus." />
+    <meta name="keywords" content="NaviGO, campus guide, campus navigation, campus map, events, class schedules, room finder" />
     <meta name="theme-color" content="#EAE7DE" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0A0A0A" media="(prefers-color-scheme: dark)" />
-    <meta property="og:title" content="Meridian Campus Guide — Navigation &amp; Student Directory" />
+    <meta property="og:title" content="NaviGO — Meridian Campus Guide &amp; Interactive Navigation" />
     <meta property="og:description" content="Know where to go. Campus wayfinding, class schedules, room availability, and event bulletin for Meridian Campus." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/logo.png" />
+    <meta property="og:image" content="./logo.png" />
+    <!-- SPA redirect handler for GitHub Pages -->
+    <script type="text/javascript">
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) { 
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -23,6 +36,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="./src/main.jsx"></script>
   </body>
 </html>

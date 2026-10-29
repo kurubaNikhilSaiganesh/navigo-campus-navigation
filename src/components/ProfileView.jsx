@@ -31,7 +31,6 @@ export default function ProfileView() {
     updateFacultyProfile,
     logoutDemo,
     locateOnMap,
-    setLoginModalOpen,
     navigateTo,
     theme,
   } = useContext(AppContext);

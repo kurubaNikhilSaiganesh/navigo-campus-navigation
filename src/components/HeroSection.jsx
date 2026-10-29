@@ -75,8 +75,8 @@ export default function HeroSection({ onEnter }) {
         aria-hidden="true"
       >
         {/* Drop your exported video files here when ready */}
-        <source src="/video/alts-intro.webm" type="video/webm" onError={() => setVideoLoaded(false)} />
-        <source src="/video/alts-intro.mp4" type="video/mp4" onError={() => setVideoLoaded(false)} />
+        <source src={`${import.meta.env.BASE_URL}video/alts-intro.webm`} type="video/webm" onError={() => setVideoLoaded(false)} />
+        <source src={`${import.meta.env.BASE_URL}video/alts-intro.mp4`} type="video/mp4" onError={() => setVideoLoaded(false)} />
       </video>
 
       {/* Main hero content */}

@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { PanelLeftClose, PanelLeftOpen, X, LogOut, Key, RefreshCw } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, X, RefreshCw } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 
 // ── Unique Futuristic High-Craft Icons ─────────────────────────────

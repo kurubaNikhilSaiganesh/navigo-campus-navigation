@@ -63,7 +63,6 @@ export default function TopBar({
   theme,
   toggleTheme,
   onMenuOpen,
-  setCmdOpen,
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [topSearch, setTopSearch] = useState('');

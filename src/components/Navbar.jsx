@@ -18,13 +18,13 @@ export default function Navbar() {
 
         {/* ── LEFT: NaviGO Logo Image (transparent PNG) ── */}
         <a
-          href="/"
+          href={import.meta.env.BASE_URL}
           className="flex items-center flex-shrink-0 group"
           aria-label="NaviGO Campus Navigation home"
           style={{ textDecoration: 'none' }}
         >
           <img
-            src="/logo.png"
+            src={`${import.meta.env.BASE_URL}logo.png`}
             alt="NaviGO — Navigation | Exploration | System"
             className="transition-transform group-hover:scale-95"
             style={{

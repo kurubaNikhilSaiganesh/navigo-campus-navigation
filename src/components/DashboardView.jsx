@@ -4,25 +4,6 @@ import RouteController from './RouteController';
 import { TIMETABLE, getCurrentDay, getRoomById, EVENTS as INITIAL_EVENTS } from '../data';
 import { ArrowRight, Sparkles, Navigation, BookOpen, Building, Users, Clock, Trophy, Calendar, Bell, MapPin } from 'lucide-react';
 
-// ── Slot helpers ─────────────────────────────────────────────
-function getCurrentSlot(classId) {
-  const now = new Date();
-  const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  const today = getCurrentDay();
-  return TIMETABLE.find(
-    (t) => t.classId === classId && t.day === today && hhmm >= t.startTime && hhmm < t.endTime
-  );
-}
-
-function getNextSlot(classId) {
-  const now = new Date();
-  const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  const today = getCurrentDay();
-  return TIMETABLE.filter(
-    (t) => t.classId === classId && t.day === today && t.startTime > hhmm
-  ).sort((a, b) => a.startTime.localeCompare(b.startTime))[0] || null;
-}
-
 // ── Staff slot helpers ────────────────────────────────────────
 function getCurrentStaffSlot(facultyId) {
   const now = new Date();
