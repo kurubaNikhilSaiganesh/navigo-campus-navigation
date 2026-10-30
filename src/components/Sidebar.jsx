@@ -254,10 +254,8 @@ function SidebarContent({
           className="flex items-center gap-3 text-left group transition-transform hover:scale-102 focus:outline-none"
           aria-label="Go to Meridian Campus Guide Homepage"
         >
-          <div className="w-9 h-9 shrink-0 liquid-glass-icon shadow-lg group-hover:shadow-xl transition-all" style={{ background: 'linear-gradient(135deg, #007AFF 0%, #34C759 100%)' }}>
-            <div className="w-[26px] h-[26px] rounded-full inner-glass-symbol flex items-center justify-center">
-              <span className="font-display font-black text-white text-[15px] drop-shadow-md">N</span>
-            </div>
+          <div className="w-9 h-9 shrink-0 navigo-sphere-icon group-hover:scale-105 transition-all">
+            <span className="navigo-sphere-letter text-[15px]">N</span>
           </div>
           <div>
             <p className="font-mono text-[9px] font-bold leading-tight text-[var(--sidebar-text)] tracking-widest uppercase group-hover:text-[var(--gold)] transition-colors">
