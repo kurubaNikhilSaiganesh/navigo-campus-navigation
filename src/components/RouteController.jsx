@@ -11,9 +11,9 @@ export default function RouteController() {
   const { navigateTo, setSelectedMainBlockRoomId } = useContext(AppContext);
 
   const [fromRoomId, setFromRoomId] = useState('entrance');
-  const [toRoomId, setToRoomId] = useState('mb-2-room-204');
+  const [toRoomId, setToRoomId] = useState('mb-g-board');
   const [activeRoute, setActiveRoute] = useState(() =>
-    getInternalDirections('entrance', 'mb-2-room-204')
+    getInternalDirections('entrance', 'mb-g-board')
   );
 
   const swapNodes = () => {

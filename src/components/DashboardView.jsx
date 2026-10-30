@@ -2,7 +2,7 @@ import { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import RouteController from './RouteController';
 import { TIMETABLE, getCurrentDay, getRoomById, EVENTS as INITIAL_EVENTS } from '../data';
-import { ArrowRight, Sparkles, Navigation, BookOpen, Building, Users, Clock, Trophy, Calendar, Bell, MapPin } from 'lucide-react';
+import { ArrowRight, Sparkles, Navigation, BookOpen, Building, Users, Clock, Trophy, Calendar, Bell, MapPin, Zap } from 'lucide-react';
 
 // ── Staff slot helpers ────────────────────────────────────────
 function getCurrentStaffSlot(facultyId) {
@@ -139,8 +139,40 @@ function PublicDashboard() {
 
   // Campus Highlights data
   const displayEvents  = (events && events.length ? events : INITIAL_EVENTS).slice(0, 3);
-  const allNotices     = [...announcements, ...DEFAULT_NOTICES];
+  
+  // Sync deleted notice IDs from localStorage
+  const deletedNoticeIds = (() => {
+    try {
+      const saved = localStorage.getItem('alts_deleted_notice_ids_2026');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  })();
+  const visibleDefaultNotices = DEFAULT_NOTICES.filter((n) => !deletedNoticeIds.includes(n.id));
+  const allNotices = [...(announcements || []), ...visibleDefaultNotices];
   const displayNotices = allNotices.slice(0, 2);
+
+  // New updates detection (Tomorrow's Mini Project Expo or uploaded notices)
+  const tomorrowEvents = (events || []).filter(e => e.tag === 'TOMORROW' || e.date === '2026.10.31');
+  const hasNewUpdates = (announcements && announcements.length > 0) || tomorrowEvents.length > 0;
+
+  const rawFlowItems = [
+    ...tomorrowEvents.map(e => ({
+      id: e.id,
+      text: `[EVENT] TOMORROW (2026.10.31): ${e.title} — ${e.venueName || e.venue} (${e.time})`,
+      target: 'events',
+      isTomorrow: true
+    })),
+    ...(announcements || []).map(a => ({
+      id: a.id,
+      text: `[${a.severity}] ${a.text}`,
+      target: 'notices',
+      isTomorrow: false
+    }))
+  ];
+  // Duplicate for smooth continuous marquee flow
+  const flowItems = rawFlowItems.length > 0 ? [...rawFlowItems, ...rawFlowItems] : [];
 
   const quickLinks = [
     { label: 'Main Block',        id: 'main-block', icon: <Building size={16} /> },
@@ -150,7 +182,48 @@ function PublicDashboard() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 space-y-8 page-enter">
+    <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 space-y-6 page-enter">
+
+      {/* ── Flowing Live Updates (Only renders if new update exists, otherwise normal application) ── */}
+      {hasNewUpdates && (
+        <div className="overflow-hidden rounded-2xl border border-violet-500/25 dark:border-violet-500/30 bg-[var(--bg-surface)] dark:bg-[#12141F]/90 backdrop-blur-md shadow-md py-2.5 px-3 flex items-center gap-3">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 dark:bg-emerald-500/20 border border-emerald-500/40 dark:border-emerald-400/40 text-emerald-800 dark:text-[#6EE7B7] shrink-0 font-mono text-[10px] font-black uppercase tracking-wider">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            <Zap size={11} className="fill-emerald-600 dark:fill-[#6EE7B7] text-emerald-600 dark:text-[#6EE7B7]" />
+            <span>LIVE UPDATE</span>
+          </div>
+
+          <div className="overflow-hidden relative flex-1">
+            <div className="ticker-track flex items-center">
+              {flowItems.map((item, idx) => (
+                <span
+                  key={`${item.id}-${idx}`}
+                  onClick={() => navigateTo(item.target)}
+                  className="cursor-pointer font-mono text-xs font-bold text-[var(--text-primary)] dark:text-[#DDD6FE] hover:text-emerald-700 dark:hover:text-[#6EE7B7] transition-colors whitespace-nowrap flex items-center gap-3 shrink-0 px-4"
+                  title="Click to view update details"
+                >
+                  {item.isTomorrow ? (
+                    <span className="text-emerald-700 dark:text-[#6EE7B7] font-black">
+                      ⚡ {item.text}
+                    </span>
+                  ) : (
+                    <span>{item.text}</span>
+                  )}
+                  <span className="text-slate-400 dark:text-violet-400/30">│</span>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={() => navigateTo(tomorrowEvents.length > 0 ? 'events' : 'notices')}
+            className="shrink-0 font-mono text-[10px] font-bold uppercase text-emerald-700 dark:text-[#6EE7B7] hover:text-emerald-900 dark:hover:text-white px-2.5 py-1 rounded-lg hover:bg-emerald-500/10 dark:hover:bg-emerald-500/20 transition-all flex items-center gap-1"
+          >
+            <span>View All</span>
+            <ArrowRight size={11} />
+          </button>
+        </div>
+      )}
 
       {/* ── Admin announcement banner ── */}
       {announcements.length > 0 && (
@@ -212,10 +285,8 @@ function PublicDashboard() {
 
             {/* NaviGO Logo */}
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 shrink-0 liquid-glass-icon shadow-lg" style={{ background: 'linear-gradient(135deg, #007AFF 0%, #34C759 100%)' }}>
-                <div className="w-[28px] h-[28px] rounded-full inner-glass-symbol flex items-center justify-center">
-                  <span className="font-display font-black text-white text-[16px] drop-shadow-md">N</span>
-                </div>
+              <div className="w-10 h-10 shrink-0 navigo-sphere-icon shadow-lg">
+                <span className="navigo-sphere-letter text-[17px]">N</span>
               </div>
               <span className="font-display font-black text-2xl tracking-tight text-[var(--text-primary)]">
                 NaviGO
@@ -296,11 +367,18 @@ function PublicDashboard() {
                 {displayEvents.map((ev) => (
                   <div
                     key={ev.id}
-                    className="flex items-start gap-3 p-3 rounded-lg border border-[var(--glass-border)] bg-black/[0.02] dark:bg-white/[0.02] hover:border-[var(--glass-border-strong)] transition-colors"
+                    className="flex items-start gap-3 p-3 rounded-lg border border-[var(--glass-border)] bg-black/[0.02] dark:bg-white/[0.02] hover:border-emerald-400/50 transition-colors"
                   >
-                    <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm text-[var(--text-primary)] truncate">{ev.title}</p>
+                    <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${ev.tag === 'TOMORROW' || ev.date === '2026.10.31' ? 'bg-emerald-500 dark:bg-[#6EE7B7] animate-pulse' : 'bg-blue-500'}`} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold text-sm text-[var(--text-primary)] truncate">{ev.title}</p>
+                        {(ev.tag === 'TOMORROW' || ev.date === '2026.10.31') && (
+                          <span className="font-mono text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-800 dark:text-[#6EE7B7] border border-emerald-500/30 dark:border-emerald-400/40 font-bold shrink-0">
+                            ⚡ TOMORROW
+                          </span>
+                        )}
+                      </div>
                       <p className="font-mono text-[11px] text-[var(--text-muted)] mt-0.5">
                         {ev.date} · {ev.venueName || ev.venue}
                       </p>
@@ -324,24 +402,23 @@ function PublicDashboard() {
           {/* Right: Notices + Quick Access */}
           <div className="space-y-4">
 
-            {/* Important Notices */}
-            <div className="glass-card rounded-xl p-5 border border-[var(--glass-border)] space-y-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Bell size={16} className="text-amber-500" />
-                <h3 className="font-display font-bold text-sm uppercase tracking-tight text-[var(--text-primary)]">
-                  Notices
-                </h3>
-              </div>
-              {displayNotices.map((n) => (
-                <div key={n.id} className="flex items-start gap-2.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
-                  <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{n.text}</p>
+            {/* Important Notices (disappears if no active notices) */}
+            {displayNotices.length > 0 && (
+              <div className="glass-card rounded-xl p-5 border border-[var(--glass-border)] space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Bell size={16} className="text-amber-500" />
+                  <h3 className="font-display font-bold text-sm uppercase tracking-tight text-[var(--text-primary)]">
+                    Notices
+                  </h3>
                 </div>
-              ))}
-              {displayNotices.length === 0 && (
-                <p className="text-xs text-[var(--text-muted)] italic">No active notices.</p>
-              )}
-            </div>
+                {displayNotices.map((n) => (
+                  <div key={n.id} className="flex items-start gap-2.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
+                    <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{n.text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Quick Access */}
             <div className="glass-card rounded-xl p-5 border border-[var(--glass-border)]">
@@ -585,10 +662,8 @@ function StaffDashboard() {
             </div>
 
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 shrink-0 liquid-glass-icon shadow-lg" style={{ background: 'linear-gradient(135deg, #007AFF 0%, #34C759 100%)' }}>
-                <div className="w-[28px] h-[28px] rounded-full inner-glass-symbol flex items-center justify-center">
-                  <span className="font-display font-black text-white text-[16px] drop-shadow-md">N</span>
-                </div>
+              <div className="w-10 h-10 shrink-0 navigo-sphere-icon shadow-lg">
+                <span className="navigo-sphere-letter text-[17px]">N</span>
               </div>
               <span className="font-display font-black text-2xl tracking-tight text-[var(--text-primary)]">
                 NaviGO Staff

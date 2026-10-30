@@ -3,7 +3,7 @@ import { AppContext } from '../context/AppContext';
 import { getClassById } from '../data';
 import {
   Search, Mail, Phone, MapPin, ArrowLeft,
-  ChevronRight, BookOpen, AlertCircle, Building2
+  BookOpen, AlertCircle, Building2
 } from 'lucide-react';
 
 const GRAD_PALETTE = [
@@ -151,30 +151,39 @@ export default function FacultyView() {
           {/* Details Body */}
           <div className="p-6 sm:p-8 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {/* Email */}
-              <div className="p-4 rounded-2xl glass-1 border border-[var(--glass-border)]">
-                <div className="flex items-center gap-2 text-[var(--text-muted)] mb-1">
-                  <Mail size={13} className="text-violet-400" />
-                  <p className="font-mono text-[9px] uppercase tracking-wider font-bold">Email</p>
-                </div>
-                <a
-                  href={`mailto:${selectedFaculty.email}`}
-                  className="font-mono text-xs font-semibold text-[var(--text-primary)] hover:text-violet-400 hover:underline break-all"
-                >
-                  {selectedFaculty.email}
-                </a>
-              </div>
-
-              {/* Phone */}
+              {/* Phone / Mobile */}
               <div className="p-4 rounded-2xl glass-1 border border-[var(--glass-border)]">
                 <div className="flex items-center gap-2 text-[var(--text-muted)] mb-1">
                   <Phone size={13} className="text-emerald-400" />
-                  <p className="font-mono text-[9px] uppercase tracking-wider font-bold">Phone</p>
+                  <p className="font-mono text-[9px] uppercase tracking-wider font-bold">Mobile</p>
                 </div>
-                <p className="font-mono text-xs font-semibold text-[var(--text-primary)]">
-                  {selectedFaculty.phone || 'Ext. Pending'}
-                </p>
+                {selectedFaculty.phone ? (
+                  <a
+                    href={`tel:${selectedFaculty.phone}`}
+                    className="font-mono text-xs font-bold text-emerald-400 hover:underline"
+                  >
+                    {selectedFaculty.phone}
+                  </a>
+                ) : (
+                  <p className="font-mono text-xs text-[var(--text-muted)]">Not available</p>
+                )}
               </div>
+
+              {/* Email (only if available) */}
+              {selectedFaculty.email ? (
+                <div className="p-4 rounded-2xl glass-1 border border-[var(--glass-border)]">
+                  <div className="flex items-center gap-2 text-[var(--text-muted)] mb-1">
+                    <Mail size={13} className="text-violet-400" />
+                    <p className="font-mono text-[9px] uppercase tracking-wider font-bold">Email</p>
+                  </div>
+                  <a
+                    href={`mailto:${selectedFaculty.email}`}
+                    className="font-mono text-xs font-semibold text-[var(--text-primary)] hover:text-violet-400 hover:underline break-all"
+                  >
+                    {selectedFaculty.email}
+                  </a>
+                </div>
+              ) : null}
 
               {/* Office */}
               <div className="p-4 rounded-2xl glass-1 border border-[var(--glass-border)] flex flex-col justify-between">
@@ -362,17 +371,27 @@ export default function FacultyView() {
                     </div>
                   </div>
 
-                  {/* Office & Email info */}
+                  {/* Contact info: Mobile & Office */}
                   <div className="space-y-1 mb-3 text-xs font-mono">
+                    {faculty.phone && (
+                      <p className="text-[var(--text-secondary)] truncate">
+                        <span className="text-[var(--text-muted)] mr-1">Mobile:</span>
+                        <a href={`tel:${faculty.phone}`} className="text-emerald-400 font-bold hover:underline">
+                          {faculty.phone}
+                        </a>
+                      </p>
+                    )}
+                    {faculty.email && (
+                      <p className="text-[var(--text-secondary)] truncate">
+                        <span className="text-[var(--text-muted)] mr-1">Email:</span>
+                        <a href={`mailto:${faculty.email}`} className="text-violet-400 hover:underline">
+                          {faculty.email}
+                        </a>
+                      </p>
+                    )}
                     <p className="text-[var(--text-secondary)] truncate">
                       <span className="text-[var(--text-muted)] mr-1">Office:</span>
                       {faculty.office}
-                    </p>
-                    <p className="text-[var(--text-secondary)] truncate">
-                      <span className="text-[var(--text-muted)] mr-1">Email:</span>
-                      <a href={`mailto:${faculty.email}`} className="text-violet-400 hover:underline">
-                        {faculty.email}
-                      </a>
                     </p>
                   </div>
 
@@ -394,8 +413,8 @@ export default function FacultyView() {
                   </div>
                 </div>
 
-                {/* Actions: View Profile & Find Office */}
-                <div className="pt-3 border-t border-[var(--glass-border)] flex items-center justify-between gap-2">
+                {/* Actions: Locate Office */}
+                <div className="pt-3 border-t border-[var(--glass-border)] flex items-center justify-start">
                   <button
                     onClick={() => locateOnMap(faculty.buildingId || 'academic_a')}
                     className="glass-btn glass-btn-ghost rounded-lg px-3 py-1.5 text-xs flex items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--gold)]"
@@ -403,15 +422,6 @@ export default function FacultyView() {
                   >
                     <MapPin size={12} />
                     <span>Locate</span>
-                  </button>
-
-                  <button
-                    onClick={() => setActiveFacultyDetailId(faculty.id)}
-                    className="glass-btn glass-btn-primary rounded-lg px-4 py-1.5 text-xs font-bold shadow-sm flex items-center gap-1 hover:scale-105 transition-all"
-                    id={`view-profile-${faculty.id}`}
-                  >
-                    <span>View Profile</span>
-                    <ChevronRight size={13} />
                   </button>
                 </div>
               </div>
