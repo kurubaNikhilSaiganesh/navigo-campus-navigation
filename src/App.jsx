@@ -6,8 +6,10 @@ import {
   EVENTS as INITIAL_EVENTS,
   CLASSES as INITIAL_CLASSES,
   FACULTY as INITIAL_FACULTY,
+  TIMETABLE as INITIAL_TIMETABLE,
   MARQUEE_ITEMS,
 } from './data';
+import { parseTimetableCSV, parseEventsCSV, parseNoticesCSV } from './lib/csvHelper';
 import { useTheme } from './hooks/useTheme';
 import { AppContext } from './context/AppContext';
 
@@ -31,7 +33,6 @@ import SearchView from './components/SearchView';
 import NoticesView from './components/NoticesView';
 import ProfileView from './components/ProfileView';
 import DemoLoginModal from './components/DemoLoginModal';
-import MarqueeTicker from './components/MarqueeTicker';
 import { AlertTriangle, Home, ShieldAlert, X } from 'lucide-react';
 
 const VALID_VIEWS = [
@@ -73,8 +74,11 @@ export default function App() {
   // Faculty list with local persistence and sync with profile
   const [facultyList, setFacultyList] = useState(() => {
     try {
-      const saved = localStorage.getItem('alts_faculty_list');
-      return saved ? JSON.parse(saved) : INITIAL_FACULTY;
+      const saved = localStorage.getItem('alts_faculty_list_2026');
+      if (saved) return JSON.parse(saved);
+      // Clean legacy cache to ensure latest faculty list loads
+      localStorage.removeItem('alts_faculty_list');
+      return INITIAL_FACULTY;
     } catch {
       return INITIAL_FACULTY;
     }
@@ -184,10 +188,32 @@ export default function App() {
   const [registerModal, setRegisterModal] = useState(null);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
 
-  // Shared data state — with offline safety fallback
-  const [events, setEvents] = useState(INITIAL_EVENTS);
+  // Shared data state — with offline safety fallback & localStorage persistence
+  const [events, setEvents] = useState(() => {
+    try {
+      const saved = localStorage.getItem('alts_custom_events_2026');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      return INITIAL_EVENTS;
+    } catch {
+      return INITIAL_EVENTS;
+    }
+  });
   const [classes, setClasses] = useState(INITIAL_CLASSES);
-  const [announcements, setAnnouncements] = useState([]);
+  const [announcements, setAnnouncements] = useState(() => {
+    try {
+      const saved = localStorage.getItem('alts_custom_announcements_2026');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  });
   const [roomOverrides, setRoomOverrides] = useState({});
   const [timetableOverrides, setTimetableOverrides] = useState({});
   const [locationStatus, setLocationStatus] = useState({}); // { [buildingId]: 'closed' | 'active' }
@@ -261,14 +287,150 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler);
   }, [userRole]);
 
-  const addAnnouncement = useCallback((text, severity = 'ALERT') => {
+  const [hasCustomNotices, setHasCustomNotices] = useState(() => {
+    try {
+      return Boolean(localStorage.getItem('alts_custom_announcements_2026'));
+    } catch {
+      return false;
+    }
+  });
+
+  const addAnnouncement = useCallback((text, severity = 'NOTICE') => {
     const id = `ann_${Date.now()}`;
-    setAnnouncements((prev) => [{ id, text, severity, timestamp: new Date().toISOString() }, ...prev]);
+    const newNotice = { id, text, severity, timestamp: new Date().toISOString() };
+    setAnnouncements((prev) => {
+      const next = [newNotice, ...prev];
+      try { localStorage.setItem('alts_custom_announcements_2026', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+    setHasCustomNotices(true);
     return id;
   }, []);
 
   const removeAnnouncement = useCallback((id) => {
-    setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+    setAnnouncements((prev) => {
+      const next = prev.filter((a) => a.id !== id);
+      try { localStorage.setItem('alts_custom_announcements_2026', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
+  const updateNoticesFromCSV = useCallback((csvText) => {
+    const parsed = parseNoticesCSV(csvText);
+    if (parsed && parsed.length > 0) {
+      setAnnouncements((prev) => {
+        const next = [...parsed, ...prev];
+        try { localStorage.setItem('alts_custom_announcements_2026', JSON.stringify(next)); } catch { /* ignore */ }
+        return next;
+      });
+      setHasCustomNotices(true);
+      return { success: true, count: parsed.length };
+    }
+    return { success: false, error: 'Invalid CSV format for notices. Columns: Notice Text, Severity, Date.' };
+  }, []);
+
+  const resetNoticesToDefault = useCallback(() => {
+    setAnnouncements([]);
+    setHasCustomNotices(false);
+    try { localStorage.removeItem('alts_custom_announcements_2026'); } catch { /* ignore */ }
+  }, []);
+
+  // Dynamic Events support
+  const [hasCustomEvents, setHasCustomEvents] = useState(() => {
+    try {
+      return Boolean(localStorage.getItem('alts_custom_events_2026'));
+    } catch {
+      return false;
+    }
+  });
+
+  const addEvent = useCallback((eventData) => {
+    const newEvent = {
+      id: `ev_${Date.now()}`,
+      title: (eventData.title || 'New Event').toUpperCase(),
+      category: (eventData.category || 'COMPETITION').toUpperCase().replace(/\s+/g, '_'),
+      date: eventData.date || '2026.10.31',
+      time: eventData.time || '09:30 AM',
+      venue: eventData.venue || 'auditorium',
+      venueName: (eventData.venueName || 'AUDITORIUM & CSE LABS').toUpperCase(),
+      description: eventData.description || 'Campus event announcement and showcase.',
+      organizer: eventData.organizer || 'College Management',
+      status: 'UPCOMING',
+      tag: eventData.tag || (eventData.date === '2026.10.31' ? 'TOMORROW' : ''),
+      span: 'medium',
+    };
+    setEvents((prev) => {
+      const next = [newEvent, ...prev];
+      try { localStorage.setItem('alts_custom_events_2026', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+    setHasCustomEvents(true);
+    return newEvent;
+  }, []);
+
+  const updateEventsFromCSV = useCallback((csvText) => {
+    const parsed = parseEventsCSV(csvText);
+    if (parsed && parsed.length > 0) {
+      setEvents((prev) => {
+        const existingTitles = new Set(parsed.map((p) => p.title.toLowerCase()));
+        const remaining = prev.filter((p) => !existingTitles.has(p.title.toLowerCase()));
+        const next = [...parsed, ...remaining];
+        try { localStorage.setItem('alts_custom_events_2026', JSON.stringify(next)); } catch { /* ignore */ }
+        return next;
+      });
+      setHasCustomEvents(true);
+      return { success: true, count: parsed.length };
+    }
+    return { success: false, error: 'Invalid CSV format for events. Columns: Title, Category, Date, Time, Venue, Description, Organizer.' };
+  }, []);
+
+  const resetEventsToDefault = useCallback(() => {
+    setEvents(INITIAL_EVENTS);
+    setHasCustomEvents(false);
+    try { localStorage.removeItem('alts_custom_events_2026'); } catch { /* ignore */ }
+  }, []);
+
+  // Dynamic CSV Timetable support (allows non-programmers to edit and upload CSV)
+  const [timetableData, setTimetableData] = useState(() => {
+    try {
+      const savedCsv = localStorage.getItem('alts_custom_timetable_csv');
+      if (savedCsv) {
+        const parsed = parseTimetableCSV(savedCsv);
+        if (parsed && parsed.length > 0) return parsed;
+      }
+      return INITIAL_TIMETABLE;
+    } catch {
+      return INITIAL_TIMETABLE;
+    }
+  });
+
+  const [hasCustomCSV, setHasCustomCSV] = useState(() => {
+    try {
+      return Boolean(localStorage.getItem('alts_custom_timetable_csv'));
+    } catch {
+      return false;
+    }
+  });
+
+  const updateTimetableFromCSV = useCallback((csvText) => {
+    const parsed = parseTimetableCSV(csvText);
+    if (parsed && parsed.length > 0) {
+      setTimetableData(parsed);
+      setHasCustomCSV(true);
+      try {
+        localStorage.setItem('alts_custom_timetable_csv', csvText);
+      } catch { /* ignore */ }
+      return { success: true, count: parsed.length };
+    }
+    return { success: false, error: 'Invalid or empty CSV format. Please make sure columns match: Class, Day, Slot ID, Start Time, End Time, Subject, Room, Faculty.' };
+  }, []);
+
+  const resetTimetableToDefault = useCallback(() => {
+    setTimetableData(INITIAL_TIMETABLE);
+    setHasCustomCSV(false);
+    try {
+      localStorage.removeItem('alts_custom_timetable_csv');
+    } catch { /* ignore */ }
   }, []);
 
   const applyRoomOverride = useCallback((classId, newRoomId) => {
@@ -355,16 +517,15 @@ export default function App() {
     facultyList, setFacultyList,
     updateFacultyProfile,
     // Shared data
-    events, setEvents,
+    events, setEvents, addEvent, updateEventsFromCSV, resetEventsToDefault, hasCustomEvents,
     classes, setClasses,
-    announcements, addAnnouncement, removeAnnouncement,
+    announcements, addAnnouncement, removeAnnouncement, updateNoticesFromCSV, resetNoticesToDefault, hasCustomNotices,
     roomOverrides, applyRoomOverride,
     timetableOverrides, applyTimetableOverride,
+    timetableData, updateTimetableFromCSV, resetTimetableToDefault, hasCustomCSV,
     locationStatus, toggleLocationStatus,
     marqueeItems: MARQUEE_ITEMS,
   };
-
-  const currentYear = new Date().getFullYear();
 
   return (
     <AppContext.Provider value={ctx}>
@@ -384,9 +545,6 @@ export default function App() {
 
         {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden my-3 mr-3 ml-1 lg:ml-3 rounded-3xl border border-[var(--glass-border)] bg-[var(--bg-surface)] shadow-xl relative transition-all duration-300">
-
-          {/* Announcement ticker — always shown */}
-          <MarqueeTicker items={announcements.length > 0 ? announcements.map((a) => a.text) : []} />
 
           {/* Glass top bar */}
           <TopBar
@@ -435,32 +593,6 @@ export default function App() {
                 <NotFoundView onGoHome={() => navigateTo('today')} />
               )}
             </div>
-
-            {/* Glass Shared Footer */}
-            <footer className="mt-12 px-6 py-8 border-t border-[var(--glass-border)] glass-1 text-center sm:text-left flex flex-col md:flex-row items-center justify-between gap-6 text-xs font-mono text-[var(--text-muted)] select-none">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 justify-center sm:justify-start">
-                  <span className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-black" style={{ background: 'linear-gradient(135deg, #007AFF 0%, #34C759 100%)' }}>N</span>
-                  <p className="font-bold text-[var(--text-primary)] tracking-wide">
-                    NaviGO · Meridian Campus Guide © {currentYear}
-                  </p>
-                </div>
-                <p className="text-[10.5px] text-[var(--text-subtle)] leading-relaxed">
-                  Interactive campus directory, indoor navigation &amp; academic information platform.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-x-5 gap-y-2 flex-wrap justify-center text-[11px]">
-                <button onClick={() => navigateTo('today')} className="hover:text-[var(--text-primary)] transition-colors">Home</button>
-                <button onClick={() => navigateTo('route')} className="hover:text-[var(--text-primary)] transition-colors">Main Block</button>
-                <button onClick={() => navigateTo('directory')} className="hover:text-[var(--text-primary)] transition-colors">Directory</button>
-                <button onClick={() => navigateTo('timetable')} className="hover:text-[var(--text-primary)] transition-colors">Timetable</button>
-                <button onClick={() => navigateTo('faculty')} className="hover:text-[var(--text-primary)] transition-colors">Faculty</button>
-                <button onClick={() => navigateTo('events')} className="hover:text-[var(--text-primary)] transition-colors">Events</button>
-                <button onClick={() => navigateTo('notices')} className="hover:text-[var(--text-primary)] transition-colors">Notices</button>
-                <button onClick={() => setFeedbackModalOpen(true)} className="text-[var(--gold)] font-bold hover:underline">Disclaimer &amp; About</button>
-              </div>
-            </footer>
           </main>
         </div>
 

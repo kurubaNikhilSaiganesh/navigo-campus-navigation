@@ -155,7 +155,9 @@ export default function TopBar({
               style={{ color: 'var(--gold)' }}
               aria-label="Go to NaviGO Home"
             >
-              <span className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[11px] font-black shadow-sm" style={{ background: 'linear-gradient(135deg, #007AFF 0%, #34C759 100%)' }}>N</span>
+              <div className="w-5 h-5 shrink-0 navigo-sphere-icon">
+                <span className="navigo-sphere-letter text-[10px]">N</span>
+              </div>
               NaviGO
             </button>
 

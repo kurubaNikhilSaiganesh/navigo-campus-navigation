@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - sai
+      - mohan
+  workflow_dispatch:
 
 # Required permissions for GitHub Pages deployment
 permissions:

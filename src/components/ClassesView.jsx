@@ -13,7 +13,8 @@ export default function ClassesView() {
   const [selectedClassId, setSelectedClassId] = useState(activeClasses[0]?.id || 'cs_2a');
   const [roomModal, setRoomModal] = useState(null);
 
-  const departments = ['ALL', ...new Set(activeClasses.map((c) => c.department))];
+  // Single department button instead of duplicates
+  const departments = ['ALL', 'Computer Science'];
 
   // Derive buildings where classes are held
   const buildingIds = [...new Set(activeClasses.map((c) => {
@@ -23,7 +24,7 @@ export default function ClassesView() {
   const buildings = ['ALL', ...buildingIds];
 
   const filtered = activeClasses.filter((cls) => {
-    const deptOk = selectedDept === 'ALL' || cls.department === selectedDept;
+    const deptOk = selectedDept === 'ALL' || cls.department === selectedDept || cls.department.toLowerCase().includes(selectedDept.toLowerCase());
     const room = getRoomById(cls.roomId);
     const buildingOk = selectedBuilding === 'ALL' || (room && room.building === selectedBuilding);
     const q = searchQuery.toLowerCase().trim();
@@ -101,7 +102,7 @@ export default function ClassesView() {
                     : 'glass-1 border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                 }`}
               >
-                {d === 'ALL' ? 'ALL DEPTS' : d.split(' ')[0]}
+                {d === 'ALL' ? 'ALL DEPTS' : d}
               </button>
             ))}
           </div>

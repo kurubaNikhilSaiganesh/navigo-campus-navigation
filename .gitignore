@@ -61,3 +61,6 @@ __pycache__/
 mini-project/
 
 serviceAccountKey.json
+.vite/
+
+backend/certs/server.key

@@ -8,6 +8,8 @@ on:
       - 'feature/**'
       - 'fix/**'
       - sai
+      - mohan
+  workflow_dispatch:
   pull_request:
     branches:
       - main

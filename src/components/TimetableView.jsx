@@ -1,7 +1,8 @@
-import { useState, useContext } from 'react';
-import { CLASSES, TIMETABLE, DAYS, getCurrentDay, getTimetableForDay, getRoomById } from '../data';
+import { useState, useContext, useRef } from 'react';
+import { CLASSES, TIMETABLE, DAYS, getCurrentDay, getRoomById } from '../data';
 import { AppContext } from '../context/AppContext';
-import { Clock, MapPin, CheckCircle2, Circle, ChevronDown } from 'lucide-react';
+import { Clock, MapPin, CheckCircle2, Circle, ChevronDown, UploadCloud, Download, RotateCcw, FileSpreadsheet, Check } from 'lucide-react';
+import { exportTimetableCSV, downloadCSV } from '../lib/csvHelper';
 
 function getCurrentTime() {
   const now = new Date();
@@ -18,16 +19,29 @@ function isUpcoming(startTime) {
 }
 
 export default function TimetableView() {
-  const { locateOnMap } = useContext(AppContext);
-  const [selectedClassId, setSelectedClassId] = useState('cs_2a');
+  const {
+    locateOnMap,
+    timetableData,
+    updateTimetableFromCSV,
+    resetTimetableToDefault,
+    hasCustomCSV
+  } = useContext(AppContext);
+
+  const fileInputRef = useRef(null);
+  const [csvStatus, setCsvStatus] = useState(null); // { type: 'success' | 'error', message: string }
+  const [selectedClassId, setSelectedClassId] = useState('cse_a');
   const [viewMode, setViewMode] = useState('today'); // 'today' | 'week'
   const today = getCurrentDay();
   const [mobileSelectedDay, setMobileSelectedDay] = useState(today === 'SUN' ? 'MON' : today);
 
   const selectedClass = CLASSES.find((c) => c.id === selectedClassId);
+  const activeTimetable = timetableData || TIMETABLE;
 
-  const todaySlots = getTimetableForDay(selectedClassId, today);
-  const allSlots = TIMETABLE.filter((t) => t.classId === selectedClassId)
+  const todaySlots = activeTimetable
+    .filter((t) => t.classId === selectedClassId && t.day === today)
+    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+  const allSlots = activeTimetable.filter((t) => t.classId === selectedClassId)
     .sort((a, b) => {
       const dayOrder = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
       if (dayOrder.indexOf(a.day) !== dayOrder.indexOf(b.day)) {
@@ -40,6 +54,49 @@ export default function TimetableView() {
     acc[day] = allSlots.filter((s) => s.day === day);
     return acc;
   }, {});
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result;
+      if (typeof text === 'string') {
+        const result = updateTimetableFromCSV ? updateTimetableFromCSV(text) : { success: false };
+        if (result.success) {
+          setCsvStatus({
+            type: 'success',
+            message: `Timetable updated successfully from CSV! (${result.count} slots loaded across all sections)`
+          });
+        } else {
+          setCsvStatus({
+            type: 'error',
+            message: result.error || 'Failed to parse CSV file. Please check file columns.'
+          });
+        }
+        setTimeout(() => setCsvStatus(null), 6000);
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDownload = () => {
+    const csvContent = exportTimetableCSV(activeTimetable);
+    downloadCSV('alts_college_timetable.csv', csvContent);
+  };
+
+  const handleReset = () => {
+    if (resetTimetableToDefault) {
+      resetTimetableToDefault();
+      setCsvStatus({
+        type: 'success',
+        message: 'Timetable restored to college default schedule.'
+      });
+      setTimeout(() => setCsvStatus(null), 4000);
+    }
+  };
 
   const statusOf = (slot) => {
     if (slot.day !== today) return 'other';
@@ -65,6 +122,93 @@ export default function TimetableView() {
           {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           <span className="font-mono ml-2 text-xs text-amber-500 font-bold">· Today: {today}</span>
         </p>
+      </div>
+
+      {/* CSV Status Alert Banner */}
+      {csvStatus && (
+        <div
+          className={`flex items-center justify-between p-3.5 rounded-xl border font-mono text-xs animate-in fade-in ${
+            csvStatus.type === 'success'
+              ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400'
+              : 'bg-red-500/15 border-red-500/40 text-red-400'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {csvStatus.type === 'success' ? <Check size={16} /> : null}
+            <span>{csvStatus.message}</span>
+          </div>
+          <button
+            onClick={() => setCsvStatus(null)}
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] font-bold px-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* CSV Quick Management Bar (for non-technical users) */}
+      <div className="glass-card rounded-2xl p-4 sm:p-5 border border-[var(--glass-border)] flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 shrink-0">
+            <FileSpreadsheet size={20} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-display font-bold text-sm text-[var(--text-primary)]">
+                Timetable CSV &amp; Excel Hub
+              </h3>
+              {hasCustomCSV && (
+                <span className="font-mono text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
+                  Custom CSV Active
+                </span>
+              )}
+            </div>
+            <p className="font-mono text-[10.5px] text-[var(--text-muted)] mt-0.5">
+              Edit timetable in Excel or Google Sheets anytime. Download the template, edit, and upload.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Download CSV button */}
+          <button
+            onClick={handleDownload}
+            className="glass-btn glass-btn-ghost rounded-lg px-3 py-2 text-xs font-mono font-semibold flex items-center gap-1.5 hover:text-[var(--gold)]"
+            title="Download CSV file to edit in Excel"
+          >
+            <Download size={14} />
+            <span>Download CSV</span>
+          </button>
+
+          {/* Upload CSV button */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            accept=".csv,text/csv"
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="glass-btn glass-btn-primary rounded-lg px-3.5 py-2 text-xs font-mono font-bold flex items-center gap-1.5 shadow-md hover:scale-105 active:scale-95"
+            title="Upload CSV file directly"
+          >
+            <UploadCloud size={14} />
+            <span>Upload CSV</span>
+          </button>
+
+          {/* Reset button if custom CSV active */}
+          {hasCustomCSV && (
+            <button
+              onClick={handleReset}
+              className="glass-btn glass-btn-ghost rounded-lg px-2.5 py-2 text-xs font-mono text-red-400 hover:bg-red-500/10 flex items-center gap-1"
+              title="Reset to default college timetable"
+            >
+              <RotateCcw size={13} />
+              <span>Reset</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Controls row — cleanly aligned on both mobile and desktop */}
@@ -198,9 +342,15 @@ export default function TimetableView() {
                         <h3 className="font-display font-bold text-base sm:text-lg leading-tight text-[var(--text-primary)]">
                           {slot.subject}
                         </h3>
-                        <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
-                          ROOM: {slot.roomId?.replace('room_', '').toUpperCase()}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-muted)] font-mono mt-1">
+                          <span>ROOM: <strong className="text-[var(--gold)]">{slot.room || slot.roomId?.replace('room_', '').toUpperCase()}</strong></span>
+                          {slot.facultyName && (
+                            <>
+                              <span>·</span>
+                              <span className="text-[var(--text-primary)] font-semibold">Faculty: {slot.facultyName}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-2 self-start sm:self-auto">
@@ -403,8 +553,13 @@ export default function TimetableView() {
                               {slot.subject}
                             </p>
                             <p className="font-mono text-[8.5px] text-[var(--text-muted)] mt-0.5">
-                              {slot.roomId?.replace('room_', '').toUpperCase()}
+                              Room: {slot.room || slot.roomId?.replace('room_', '').toUpperCase()}
                             </p>
+                            {slot.facultyName && (
+                              <p className="text-[8.5px] text-[var(--text-subtle)] truncate mt-0.5">
+                                {slot.facultyName}
+                              </p>
+                            )}
                             {isCurrent && (
                               <span className="inline-block mt-1 text-[8px] font-mono text-emerald-400 font-bold">● NOW</span>
                             )}

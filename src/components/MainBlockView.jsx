@@ -13,6 +13,8 @@ import {
   MAIN_BLOCK_FLOORS,
   MAIN_BLOCK_ROOMS,
   ROOM_TYPE_CONFIG,
+  CATEGORY_LABELS,
+  matchesCategory,
   getRoomsByFloor,
   getMainBlockRoomById,
   searchMainBlockRooms,
@@ -41,10 +43,8 @@ export default function MainBlockView() {
 
   // Simple Internal Directions State
   const [startPointId, setStartPointId] = useState('entrance');
-  const [destPointId, setDestPointId] = useState('mb-2-room-204');
-  const [activeRoute, setActiveRoute] = useState(() =>
-    getInternalDirections('entrance', 'mb-2-room-204')
-  );
+  const [destPointId, setDestPointId] = useState('');
+  const [activeRoute, setActiveRoute] = useState(null);
 
   // Sync external selection if provided via AppContext
   useEffect(() => {
@@ -66,12 +66,27 @@ export default function MainBlockView() {
     return getRoomsByFloor(selectedFloor);
   }, [selectedFloor]);
 
+  // Rooms filtered by the active category on current floor
+  const displayedFloorRooms = useMemo(() => {
+    if (activeCategoryFilter === 'all') return currentFloorRooms;
+    return currentFloorRooms.filter((r) => matchesCategory(r, activeCategoryFilter));
+  }, [currentFloorRooms, activeCategoryFilter]);
+
+  // Handle category filter toggle & clear active room if it does not match
+  const handleCategoryFilterClick = (catId) => {
+    const nextFilter = activeCategoryFilter === catId ? 'all' : catId;
+    setActiveCategoryFilter(nextFilter);
+    if (activeRoom && nextFilter !== 'all' && !matchesCategory(activeRoom, nextFilter)) {
+      setActiveRoom(null);
+    }
+  };
+
   // Search results
   const searchResults = useMemo(() => {
     if (!searchQuery.trim() && activeCategoryFilter === 'all') return [];
     let list = searchMainBlockRooms(searchQuery);
     if (activeCategoryFilter !== 'all') {
-      list = list.filter((r) => r.type === activeCategoryFilter);
+      list = list.filter((r) => matchesCategory(r, activeCategoryFilter));
     }
     return list.slice(0, 8);
   }, [searchQuery, activeCategoryFilter]);
@@ -292,19 +307,35 @@ export default function MainBlockView() {
                 { id: 'administrative', label: 'Admin' },
                 { id: 'seminar', label: 'Seminar Halls' },
                 { id: 'facility', label: 'Facilities' },
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setActiveCategoryFilter(f.id)}
-                  className={`px-3 py-1.5 rounded-md text-[11px] font-semibold whitespace-nowrap transition-all ${
-                    activeCategoryFilter === f.id
-                      ? 'bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm'
-                      : 'glass-btn glass-btn-ghost text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
+              ].map((f) => {
+                const count = f.id === 'all'
+                  ? currentFloorRooms.length
+                  : currentFloorRooms.filter((r) => matchesCategory(r, f.id)).length;
+                const isSelected = activeCategoryFilter === f.id;
+
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => handleCategoryFilterClick(f.id)}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-[var(--text-primary)] text-[var(--bg-base)] shadow-md font-bold scale-[1.02]'
+                        : 'glass-btn glass-btn-ghost text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    <span>{f.label}</span>
+                    <span
+                      className={`font-mono text-[10px] px-1.5 py-0.2 rounded-md ${
+                        isSelected
+                          ? 'bg-black/20 dark:bg-black/40 text-inherit font-bold'
+                          : 'bg-black/5 dark:bg-white/10 text-[var(--text-muted)]'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -498,7 +529,7 @@ export default function MainBlockView() {
             <div className="flex-1 min-w-0 flex flex-col rounded-xl border border-[var(--glass-border)] bg-[var(--bg-elevated)] overflow-hidden shadow-xl">
               {/* Subheader info pill */}
               <div className="px-5 py-3 border-b border-[var(--glass-border)] flex items-center justify-between text-xs bg-[var(--bg-surface)]/50">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-display font-bold text-sm text-[var(--text-primary)]">
                     Level {currentFloorMeta.shortLabel}
                   </span>
@@ -506,10 +537,38 @@ export default function MainBlockView() {
                   <span className="text-[var(--text-secondary)] truncate">
                     {currentFloorMeta.subtitle}
                   </span>
+                  {activeCategoryFilter !== 'all' && (
+                    <span className="ml-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md font-mono text-[10px] font-bold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+                      <span>Filtered: {CATEGORY_LABELS[activeCategoryFilter] || activeCategoryFilter} ({displayedFloorRooms.length})</span>
+                      <button
+                        onClick={() => setActiveCategoryFilter('all')}
+                        className="hover:text-white"
+                        title="Clear filter"
+                      >
+                        <X size={11} />
+                      </button>
+                    </span>
+                  )}
                 </div>
 
-                <div className="hidden sm:flex items-center gap-2 font-mono text-[10px] text-[var(--text-muted)]">
-                  <span>{currentFloorRooms.length} Units</span>
+                <div className="flex items-center gap-2">
+                  {activeRoute && (
+                    <button
+                      onClick={handleClearRoute}
+                      className="px-2.5 py-1 rounded-lg border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-mono text-[10px] font-bold flex items-center gap-1 transition-colors"
+                      title="Clear active route from blueprint"
+                    >
+                      <X size={12} />
+                      <span>Clear Route</span>
+                    </button>
+                  )}
+                  <div className="hidden sm:flex items-center gap-2 font-mono text-[10px] text-[var(--text-muted)]">
+                    <span>
+                      {activeCategoryFilter !== 'all'
+                        ? `${displayedFloorRooms.length} of ${currentFloorRooms.length} Units`
+                        : `${currentFloorRooms.length} Units`}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -521,7 +580,10 @@ export default function MainBlockView() {
                   selectedRoomId={activeRoom?.id}
                   highlightedRoomId={destPointId || activeRoom?.id}
                   activeRoute={activeRoute}
+                  activeCategoryFilter={activeCategoryFilter}
+                  onSelectCategory={setActiveCategoryFilter}
                   onSelectRoom={handleSelectRoom}
+                  onFloorChange={setSelectedFloor}
                   theme={theme}
                 />
               </div>
@@ -639,33 +701,49 @@ export default function MainBlockView() {
                         LEVEL {selectedFloor} DIRECTORY
                       </span>
                       <h4 className="font-display font-bold text-sm text-[var(--text-primary)]">
-                        {currentFloorMeta.label} Spaces
+                        {activeCategoryFilter === 'all'
+                          ? `${currentFloorMeta.label} Spaces`
+                          : `${CATEGORY_LABELS[activeCategoryFilter] || 'Spaces'} on ${currentFloorMeta.label}`}
                       </h4>
                     </div>
                     <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-bold">
-                      {currentFloorRooms.length} Spaces
+                      {displayedFloorRooms.length} {displayedFloorRooms.length === 1 ? 'Space' : 'Spaces'}
                     </span>
                   </div>
 
                   {/* Quick Clickable Room Chips */}
                   <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
-                    {currentFloorRooms.map((r) => (
-                      <div
-                        key={r.id}
-                        onClick={() => handleSelectRoom(r)}
-                        className="p-2.5 rounded-xl border border-[var(--glass-border)] bg-[var(--bg-surface)] hover:border-cyan-500/40 cursor-pointer transition-colors flex items-center justify-between gap-2 text-xs"
-                      >
-                        <div className="min-w-0">
-                          <p className="font-semibold text-[var(--text-primary)] truncate">
-                            {r.name}
-                          </p>
-                          <p className="font-mono text-[10px] text-[var(--text-muted)] truncate">
-                            {r.number} · {r.category}
-                          </p>
+                    {displayedFloorRooms.length > 0 ? (
+                      displayedFloorRooms.map((r) => (
+                        <div
+                          key={r.id}
+                          onClick={() => handleSelectRoom(r)}
+                          className="p-2.5 rounded-xl border border-[var(--glass-border)] bg-[var(--bg-surface)] hover:border-cyan-500/40 cursor-pointer transition-colors flex items-center justify-between gap-2 text-xs"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-semibold text-[var(--text-primary)] truncate">
+                              {r.name}
+                            </p>
+                            <p className="font-mono text-[10px] text-[var(--text-muted)] truncate">
+                              {r.number} · {r.category}
+                            </p>
+                          </div>
+                          <span className="text-[10px] font-mono text-cyan-400 font-bold">View →</span>
                         </div>
-                        <span className="text-[10px] font-mono text-cyan-400">View →</span>
+                      ))
+                    ) : (
+                      <div className="p-4 rounded-xl border border-dashed border-[var(--glass-border)] text-center space-y-2">
+                        <p className="text-xs text-[var(--text-muted)] font-medium">
+                          No {CATEGORY_LABELS[activeCategoryFilter] || 'spaces'} found on Floor {selectedFloor}.
+                        </p>
+                        <button
+                          onClick={() => setActiveCategoryFilter('all')}
+                          className="text-xs font-mono font-bold text-cyan-400 hover:underline"
+                        >
+                          View all {currentFloorRooms.length} spaces on Floor {selectedFloor}
+                        </button>
                       </div>
-                    ))}
+                    )}
                   </div>
 
                   {/* Quick Journey Shortcut */}
